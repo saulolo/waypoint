@@ -3,7 +3,7 @@
 App web local para seguir tu progreso en videojuegos sobre sus mapas grandes.
 Cargas las imágenes de los mapas, se guardan en tu navegador y las abres con zoom y arrastre.
 
-> Estado: **SPEC 01** (biblioteca de mapas y visor). Los marcadores marcables como hechos llegan en SPEC 02.
+> Estado: **SPEC 02** (biblioteca de mapas y visor, con tema visual arcade retro). Los marcadores marcables como hechos llegan en SPEC 03.
 
 ## Requisitos
 
@@ -37,6 +37,14 @@ Si Windows lo abre con otro navegador: clic derecho → *Abrir con* → Chrome o
 - **← Biblioteca** o el botón atrás del navegador para volver.
 - La dirección (`#/map/<id>`) es estable: recargar (F5) reabre el mismo mapa.
 
+### Aspecto
+
+- Tema arcade retro: neón, letra pixel, fondo con grid en movimiento y scanlines.
+- Cada tarjeta de mapa lleva un color de acento (cian, magenta, amarillo, verde, por turnos). Los nombres se ven en mayúsculas.
+- En el visor, la imagen del mapa se ve limpia, sin efectos encima.
+- Si tienes activado **reducir movimiento** en Windows (*Configuración → Accesibilidad → Efectos visuales → Efectos de animación*, desactivado), la app no anima nada.
+- La letra pixel no dibuja bien algunas vocales acentuadas en mayúsculas (la "Í" sale como "ı"). El nombre guardado no cambia: solo es cómo se ve.
+
 ## Dónde se guardan tus mapas
 
 Todo se guarda **en el navegador** (IndexedDB), en este equipo. No se sube nada a ningún sitio.
@@ -53,9 +61,9 @@ Ten en cuenta:
 
 ```
 index.html     punto de entrada
-css/           estilos (tema en css/tokens.css)
+css/           estilos (colores en css/tokens.css, efectos arcade en css/effects.css)
 js/            código de la app (core, data, services, ui)
-vendor/        Leaflet 1.9.4, copiado para funcionar sin internet
+vendor/        Leaflet 1.9.4 y fuentes, copiados para funcionar sin internet
 specs/         especificaciones de cada fase
 ```
 
@@ -63,9 +71,11 @@ La documentación técnica está en [`CLAUDE.md`](CLAUDE.md) y las especificacio
 
 ## Próximamente
 
-- **SPEC 02**: marcadores sobre el mapa, marcables como hechos.
+- **SPEC 03**: marcadores sobre el mapa, marcables como hechos.
 - Ideas para después: categorías con color, rutas, exportar/importar copias de seguridad, tiles para imágenes gigantes.
 
 ## Créditos
 
 - [Leaflet](https://leafletjs.com/) 1.9.4: licencia BSD-2-Clause (`vendor/leaflet/LICENSE`).
+- [Press Start 2P](https://github.com/google/fonts/tree/main/ofl/pressstart2p): SIL Open Font License 1.1 (`vendor/fonts/press-start-2p/OFL.txt`). Convertida de TTF a WOFF2 sin cambios en los glifos.
+- [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono): SIL Open Font License 1.1 (`vendor/fonts/jetbrains-mono/OFL.txt`).

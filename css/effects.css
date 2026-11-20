@@ -1,0 +1,162 @@
+/*
+ * Efectos del tema arcade (SPEC 02), portados de Arcade Vault.
+ * Capas de fondo fijas, keyframes y bloque prefers-reduced-motion.
+ * Los colores salen de css/tokens.css; la única excepción es el SVG del ruido.
+ */
+
+/* ---------- Capas de fondo ---------- */
+
+/* Orden de apilado: .app-bg (0) → .app-noise (1) → contenido (2). */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% 0%, var(--color-bg-vignette-top), transparent 60%),
+    radial-gradient(120% 80% at 50% 100%, var(--color-bg-vignette-bottom), transparent 60%),
+    var(--color-bg);
+}
+
+/* Suelo en perspectiva con grid que avanza */
+.app-bg::before {
+  content: "";
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: -10%;
+  height: 70%;
+  background:
+    linear-gradient(to right, var(--color-bg-grid) 1px, transparent 1px) 0 0 / 60px 60px,
+    linear-gradient(to bottom, var(--color-bg-grid) 1px, transparent 1px) 0 0 / 60px 60px;
+  transform: perspective(600px) rotateX(60deg);
+  transform-origin: center bottom;
+  mask-image: linear-gradient(to top, black 0%, transparent 90%);
+  opacity: 0.55;
+  animation: gridscroll 8s linear infinite;
+}
+
+/* Scanlines */
+.app-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--color-bg-scanline) 0 1px,
+    transparent 1px 3px
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.6;
+}
+
+/* Ruido: SVG en línea (excepción a la regla de colores solo en tokens) */
+.app-noise {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1   0 0 0 0 1   0 0 0 0 1   0 0 0 0.08 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: 0.35;
+}
+
+/* ---------- Texto neón ---------- */
+
+.neon-cyan {
+  color: var(--color-neon-cyan);
+  text-shadow: var(--glow-cyan);
+}
+
+.neon-magenta {
+  color: var(--color-neon-magenta);
+  text-shadow: var(--glow-magenta);
+}
+
+.neon-yellow {
+  color: var(--color-neon-yellow);
+  text-shadow: var(--glow-yellow);
+}
+
+.neon-green {
+  color: var(--color-neon-green);
+  text-shadow: var(--glow-green);
+}
+
+/* Parpadeo de letrero de neón */
+.flicker {
+  animation: flicker 5s infinite steps(1, end);
+}
+
+/* Cursor de terminal parpadeante */
+.blink-cursor {
+  animation: blink 1.2s steps(1, end) infinite;
+}
+
+/* ---------- Siluetas flotantes (js/ui/silhouettes.js) ---------- */
+
+.silhouettes {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.silhouette {
+  position: absolute;
+  filter: drop-shadow(0 0 10px currentColor);
+  image-rendering: pixelated;
+  animation: float 6s ease-in-out infinite;
+}
+
+.silhouette.s1 { top: 14%; left: 8%; width: 80px; color: var(--color-neon-cyan); }
+.silhouette.s2 { top: 22%; right: 10%; width: 72px; color: var(--color-neon-magenta); animation-delay: -1.5s; }
+.silhouette.s3 { bottom: 18%; left: 12%; width: 88px; color: var(--color-neon-yellow); animation-delay: -3s; }
+.silhouette.s4 { bottom: 22%; right: 14%; width: 60px; color: var(--color-neon-green); animation-delay: -4.5s; }
+.silhouette.s5 { top: 38%; left: 4%; width: 70px; color: var(--color-neon-purple); animation-delay: -2s; }
+.silhouette.s6 { top: 8%; left: 46%; width: 44px; color: var(--color-neon-gold); animation-delay: -3.5s; }
+.silhouette.s7 { bottom: 12%; left: 42%; width: 52px; color: var(--color-neon-red); animation-delay: -1s; }
+.silhouette.s8 { top: 50%; right: 4%; width: 60px; color: var(--color-neon-sky); animation-delay: -5s; }
+
+/* ---------- Keyframes ---------- */
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-14px) rotate(2deg);
+  }
+}
+
+
+@keyframes flicker {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% {
+    opacity: 1;
+  }
+  20%, 24%, 55% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes gridscroll {
+  to {
+    background-position: 0 60px, 0 60px;
+  }
+}
+
+/* ---------- Movimiento reducido ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+  }
+}

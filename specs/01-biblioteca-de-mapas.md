@@ -10,7 +10,7 @@
 Waypoint es una app web local para seguir el progreso en videojuegos sobre mapas grandes.
 El MVP completo (mapas + marcadores marcables como hechos) se divide en dos specs.
 Esta SPEC 01 construye la base: la biblioteca, la persistencia y el visor.
-Los marcadores llegan en SPEC 02, sobre un modelo de datos que ya los contempla.
+Los marcadores llegan en SPEC 03, sobre un modelo de datos que ya los contempla.
 
 Restricciones del proyecto que esta spec fija para todas las siguientes:
 
@@ -33,12 +33,12 @@ Restricciones del proyecto que esta spec fija para todas las siguientes:
 - Visor a pantalla completa con Leaflet (`CRS.Simple`): zoom, arrastre y barra superior con "← Biblioteca" y el nombre del mapa.
 - Navegación por hash: `#/` (biblioteca) y `#/map/<id>` (visor).
 - Persistencia completa en IndexedDB que sobrevive a cerrar el navegador y reiniciar el PC.
-- Store `markers` creado vacío, listo para SPEC 02.
+- Store `markers` creado vacío, listo para SPEC 03.
 - Tema visual oscuro inspirado en MapGenie, definido con tokens CSS para poder cambiarlo después.
 
 **Fuera de alcance (para specs futuras):**
 
-- Marcadores: crearlos, editarlos, borrarlos y marcarlos como hechos (SPEC 02).
+- Marcadores: crearlos, editarlos, borrarlos y marcarlos como hechos (SPEC 03).
 - Categorías de marcadores con color.
 - Rutas entre puntos.
 - Tiles para imágenes gigantes.
@@ -75,7 +75,7 @@ const image = {
 };
 
 // Store "markers" — keyPath: "id", índice "mapId" (no único)
-// Se crea vacío en esta spec. SPEC 02 define el resto de campos.
+// Se crea vacío en esta spec. SPEC 03 define el resto de campos.
 const marker = {
   id: "…",
   mapId: "b3f1c2e4-...",
@@ -88,7 +88,7 @@ Convenciones:
 
 - Coordenadas relativas de marcadores: origen arriba a la izquierda, `x` hacia la derecha, `y` hacia abajo, rango 0–1.
 - En el visor, la imagen ocupa los bounds `[[0, 0], [height, width]]` de `CRS.Simple`.
-- Conversión relativa → Leaflet: `lat = height * (1 - y)`, `lng = width * x`. SPEC 02 la usará; esta spec solo la documenta.
+- Conversión relativa → Leaflet: `lat = height * (1 - y)`, `lng = width * x`. SPEC 03 la usará; esta spec solo la documenta.
 - Orden de la biblioteca: `lastOpenedAt` descendente; los mapas con `lastOpenedAt` nulo van después, ordenados por `createdAt` descendente.
 - Borrar un mapa elimina en una sola transacción su registro en `maps`, en `images` y todos sus `markers`.
 - Las migraciones futuras van en `onupgradeneeded` de `js/data/db.js`, por número de versión.
@@ -182,9 +182,9 @@ Reglas de capas:
 - **No:** servidor local (`npx serve`). Añade un paso y una dependencia para arrancar.
 - **Sí:** solo Chrome/Edge. IndexedDB con `file://` es fiable en Chromium.
 - **No:** soporte oficial de Firefox. Con `file://` su almacenamiento tiene casos raros.
-- **Sí:** tres stores (`maps`, `images`, `markers`). Listar no carga Blobs pesados y SPEC 02 no necesita migración.
+- **Sí:** tres stores (`maps`, `images`, `markers`). Listar no carga Blobs pesados y SPEC 03 no necesita migración.
 - **No:** un solo store con el Blob dentro. Listar cargaría todas las imágenes.
-- **Sí:** crear el store `markers` vacío ya en v1. Evita subir la versión del esquema en SPEC 02.
+- **Sí:** crear el store `markers` vacío ya en v1. Evita subir la versión del esquema en SPEC 03.
 - **Sí:** coordenadas de marcadores relativas (0–1). No dependen del zoom ni del tamaño de pantalla.
 - **Sí:** guardar la imagen original sin recomprimir. No se pierde calidad.
 - **Sí:** miniatura WebP de 320 px guardada en `maps`. La biblioteca carga rápido.
@@ -218,7 +218,7 @@ Reglas de capas:
 
 ## Qué **no** entra en esta spec
 
-- Marcadores ni su estado de hecho (SPEC 02).
+- Marcadores ni su estado de hecho (SPEC 03).
 - Categorías con color.
 - Rutas.
 - Tiles para imágenes gigantes.

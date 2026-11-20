@@ -3,15 +3,23 @@
 .dialog {
   width: min(440px, calc(100vw - 2 * var(--space-4)));
   padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-neon-cyan);
   background: var(--color-surface);
   color: var(--color-text);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-dialog);
+  clip-path: polygon(
+    var(--clip-corner) 0,
+    100% 0,
+    100% calc(100% - var(--clip-corner)),
+    calc(100% - var(--clip-corner)) 100%,
+    0 100%,
+    0 var(--clip-corner)
+  );
 }
 
 .dialog::backdrop {
   background: var(--color-overlay);
+  backdrop-filter: blur(2px);
 }
 
 .dialog[open] {
@@ -26,8 +34,15 @@
 }
 
 .dialog__title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
+  color: var(--color-neon-cyan);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-md);
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.08em;
+  line-height: 1.6;
+  text-transform: uppercase;
+  text-shadow: var(--glow-cyan);
+  overflow-wrap: anywhere;
 }
 
 .dialog__body {
@@ -52,18 +67,19 @@
   font-size: var(--font-size-sm);
 }
 
+/* El texto escrito debe verse exacto: JetBrains Mono, nunca la fuente pixel. */
 .dialog__input {
   width: 100%;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--color-line);
   background: var(--color-bg);
+  font-family: var(--font-mono);
 }
 
 .dialog__input:focus {
-  border-color: var(--color-accent);
+  border-color: var(--color-neon-cyan);
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-drop-overlay);
+  box-shadow: var(--shadow-input-focus);
 }
 
 .dialog__hint {
@@ -124,29 +140,33 @@
   gap: var(--space-3);
   width: 100%;
   padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
-  border: 1px solid var(--color-border);
-  border-left: 4px solid var(--notice-color, var(--color-accent));
-  border-radius: var(--radius-md);
+  border: 1px solid var(--color-line);
+  border-left: 4px solid var(--notice-color, var(--color-neon-cyan));
   background: var(--color-surface-raised);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), var(--notice-glow, none);
   pointer-events: auto;
   animation: notice-in 200ms ease-out;
 }
 
+/* Cada tipo con su neón: info cian, éxito verde, advertencia amarillo, error magenta. */
 .notice--info {
-  --notice-color: var(--color-text-muted);
+  --notice-color: var(--color-neon-cyan);
+  --notice-glow: var(--shadow-notice-cyan);
 }
 
 .notice--success {
-  --notice-color: var(--color-success);
+  --notice-color: var(--color-neon-green);
+  --notice-glow: var(--shadow-notice-green);
 }
 
 .notice--warning {
-  --notice-color: var(--color-warning);
+  --notice-color: var(--color-neon-yellow);
+  --notice-glow: var(--shadow-notice-yellow);
 }
 
 .notice--error {
-  --notice-color: var(--color-danger);
+  --notice-color: var(--color-neon-magenta);
+  --notice-glow: var(--shadow-notice-magenta);
 }
 
 .notice--leaving {
@@ -164,7 +184,6 @@
   height: 24px;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--color-text-muted);
   font-size: var(--font-size-lg);
@@ -178,7 +197,7 @@
 }
 
 .notice__close:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-neon-cyan);
   outline-offset: 1px;
 }
 

@@ -24,8 +24,9 @@ body.is-viewer {
   gap: var(--space-3);
   height: var(--header-height);
   padding: 0 var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-line);
+  background: linear-gradient(180deg, var(--color-bg-2), var(--color-bg));
+  box-shadow: var(--shadow-viewer-bar);
 }
 
 .viewer__back {
@@ -33,15 +34,22 @@ body.is-viewer {
   text-decoration: none;
 }
 
+/* Nombre en pixel; los largos se cortan con puntos suspensivos */
 .viewer__title {
   min-width: 0;
   overflow: hidden;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-md);
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+  text-transform: uppercase;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
+/* Escenario opaco: tapa las capas de fondo; la imagen del mapa se ve limpia, sin efectos. */
 .viewer__stage {
   position: relative;
   flex: 1;
@@ -62,42 +70,49 @@ body.is-viewer {
 
 .viewer__stage.leaflet-container {
   background: var(--color-bg);
-  font-family: var(--font-family);
+  font-family: var(--font-mono);
 }
 
 .viewer .leaflet-bar {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neon-cyan);
+  border-radius: 0;
   box-shadow: var(--shadow-md);
 }
 
 .viewer .leaflet-bar a {
   width: 36px;
   height: 36px;
-  border-bottom-color: var(--color-border);
-  background: var(--color-surface-raised);
-  color: var(--color-text);
+  border-bottom-color: var(--color-line);
+  border-radius: 0;
+  background: var(--color-bg-2);
+  color: var(--color-neon-cyan);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-lg);
   line-height: 36px;
+  transition: box-shadow var(--transition-fast), color var(--transition-fast);
+}
+
+/* Leaflet pone fondo claro en :hover y :focus; aquí se mantiene el oscuro. */
+.viewer .leaflet-bar a:focus {
+  background: var(--color-bg-2);
 }
 
 .viewer .leaflet-bar a:hover,
-.viewer .leaflet-bar a:focus {
-  background: var(--color-surface-hover);
-  color: var(--color-accent);
+.viewer .leaflet-bar a:focus-visible {
+  background: var(--color-bg-2);
+  color: var(--color-neon-cyan);
+  box-shadow: var(--shadow-btn-cyan);
+  text-shadow: var(--glow-cyan);
+}
+
+.viewer .leaflet-bar a:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: -2px;
 }
 
 .viewer .leaflet-bar a.leaflet-disabled {
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  opacity: 0.5;
-}
-
-.viewer .leaflet-bar a:first-child {
-  border-top-left-radius: var(--radius-md);
-  border-top-right-radius: var(--radius-md);
-}
-
-.viewer .leaflet-bar a:last-child {
-  border-bottom-left-radius: var(--radius-md);
-  border-bottom-right-radius: var(--radius-md);
+  background: var(--color-bg-2);
+  color: var(--color-text-faint);
+  box-shadow: none;
+  text-shadow: none;
 }
