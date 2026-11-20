@@ -1,6 +1,6 @@
 # SPEC 01 — Biblioteca de mapas y visor
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** ninguna
 > **Fecha:** 2026-11-20
 > **Objetivo:** Cargar imágenes de mapas en el navegador, guardarlas en IndexedDB, listarlas en una biblioteca y abrirlas con zoom y arrastre.
@@ -151,29 +151,29 @@ Reglas de capas:
 
 ## Criterios de aceptación
 
-- [ ] Abrir `index.html` con doble clic en Chrome carga la app sin errores en consola y sin peticiones de red externas.
-- [ ] Con la biblioteca vacía se ve el estado vacío con la zona para soltar archivos.
-- [ ] Elegir 3 imágenes (JPG, PNG y WebP) en el selector crea 3 tarjetas con miniatura y el nombre del archivo sin extensión.
-- [ ] Soltar 2 imágenes sobre la biblioteca crea 2 tarjetas.
-- [ ] Soltar un archivo `.txt` no crea ninguna tarjeta y muestra un aviso con su nombre.
-- [ ] Cargar una imagen de más de 16384 px de lado muestra el aviso. "Cancelar" no la guarda y "Continuar" sí.
-- [ ] En DevTools, cada mapa tiene un registro en `maps` y otro en `images`, con `width` y `height` iguales a los de la imagen original.
-- [ ] Abrir un mapa lo pone primero en la biblioteca al volver.
-- [ ] Renombrar un mapa cambia el nombre en la tarjeta y en la barra del visor.
-- [ ] El diálogo de renombrar no permite guardar un nombre vacío o solo con espacios.
-- [ ] Pulsar Esc en cualquier diálogo lo cierra sin cambios.
-- [ ] Borrar pide confirmación. "Cancelar" no borra nada.
-- [ ] Confirmar el borrado elimina la tarjeta y sus registros en `maps`, `images` y `markers`.
-- [ ] Clic en una tarjeta abre `#/map/<id>` con la imagen entera ajustada a la ventana.
-- [ ] En el visor, la rueda del ratón hace zoom y arrastrar mueve la imagen.
-- [ ] El zoom no baja de "mapa entero visible" ni sube de 4× el tamaño real.
-- [ ] No se puede arrastrar la imagen fuera de la vista.
-- [ ] "← Biblioteca" y el botón atrás del navegador vuelven a la biblioteca.
-- [ ] Recargar (F5) en `#/map/<id>` reabre el mismo mapa.
-- [ ] Abrir `#/map/no-existe` vuelve a la biblioteca y muestra un aviso.
-- [ ] Tras cerrar Chrome y reiniciar el PC, los mapas, nombres y miniaturas siguen ahí.
-- [ ] Ningún archivo de `js/ui/` usa `indexedDB` directamente.
-- [ ] Ningún archivo de `js/data/` usa `document`.
+- [x] Abrir `index.html` con doble clic en Chrome carga la app sin errores en consola y sin peticiones de red externas.
+- [x] Con la biblioteca vacía se ve el estado vacío con la zona para soltar archivos.
+- [x] Elegir 3 imágenes (JPG, PNG y WebP) en el selector crea 3 tarjetas con miniatura y el nombre del archivo sin extensión.
+- [x] Soltar 2 imágenes sobre la biblioteca crea 2 tarjetas.
+- [x] Soltar un archivo `.txt` no crea ninguna tarjeta y muestra un aviso con su nombre.
+- [x] Cargar una imagen de más de 16384 px de lado muestra el aviso. "Cancelar" no la guarda y "Continuar" sí.
+- [x] En DevTools, cada mapa tiene un registro en `maps` y otro en `images`, con `width` y `height` iguales a los de la imagen original.
+- [x] Abrir un mapa lo pone primero en la biblioteca al volver.
+- [x] Renombrar un mapa cambia el nombre en la tarjeta y en la barra del visor.
+- [x] El diálogo de renombrar no permite guardar un nombre vacío o solo con espacios.
+- [x] Pulsar Esc en cualquier diálogo lo cierra sin cambios.
+- [x] Borrar pide confirmación. "Cancelar" no borra nada.
+- [x] Confirmar el borrado elimina la tarjeta y sus registros en `maps`, `images` y `markers`.
+- [x] Clic en una tarjeta abre `#/map/<id>` con la imagen entera ajustada a la ventana.
+- [x] En el visor, la rueda del ratón hace zoom y arrastrar mueve la imagen.
+- [x] El zoom no baja de "mapa entero visible" ni sube de 4× el tamaño real.
+- [x] No se puede arrastrar la imagen fuera de la vista.
+- [x] "← Biblioteca" y el botón atrás del navegador vuelven a la biblioteca.
+- [x] Recargar (F5) en `#/map/<id>` reabre el mismo mapa.
+- [x] Abrir `#/map/no-existe` vuelve a la biblioteca y muestra un aviso.
+- [x] Tras cerrar Chrome y reiniciar el PC, los mapas, nombres y miniaturas siguen ahí.
+- [x] Ningún archivo de `js/ui/` usa `indexedDB` directamente.
+- [x] Ningún archivo de `js/data/` usa `document`.
 
 ## Decisiones
 
