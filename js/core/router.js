@@ -1,6 +1,7 @@
 /*
  * Router por hash.
- *   #/            → biblioteca
+ *   #/            → inicio (juegos)
+ *   #/game/<id>   → vista de juego (sus mapas)
  *   #/map/<id>    → visor
  * Cualquier otro hash redirige a #/.
  *
@@ -11,7 +12,8 @@
   "use strict";
 
   var ROUTES = [
-    { name: "library", pattern: /^#\/?$/ },
+    { name: "games", pattern: /^#\/?$/ },
+    { name: "game", pattern: /^#\/game\/([^/]+)\/?$/ },
     { name: "viewer", pattern: /^#\/map\/([^/]+)\/?$/ },
   ];
 
@@ -23,7 +25,7 @@
       var match = ROUTES[i].pattern.exec(hash);
       if (match) {
         var params = {};
-        if (ROUTES[i].name === "viewer") {
+        if (ROUTES[i].name !== "games") {
           params.id = decodeURIComponent(match[1]);
         }
         return { name: ROUTES[i].name, params: params };
@@ -47,7 +49,7 @@
     var route = parse(window.location.hash || "#/");
 
     if (!route) {
-      // Ruta desconocida: volver a la biblioteca sin dejar entrada en el historial.
+      // Ruta desconocida: volver al inicio sin dejar entrada en el historial.
       window.location.replace("#/");
       return;
     }
@@ -62,7 +64,7 @@
 
   /**
    * Arranca el router.
-   * @param {{ library: function(object): (function|void), viewer: function({id: string}): (function|void) }} routeHandlers
+   * @param {{ games: function(object): (function|void), game: function({id: string}): (function|void), viewer: function({id: string}): (function|void) }} routeHandlers
    */
   function start(routeHandlers) {
     handlers = routeHandlers || {};
@@ -70,8 +72,12 @@
     resolve();
   }
 
-  function goToLibrary() {
+  function goToGames() {
     window.location.hash = "#/";
+  }
+
+  function goToGame(id) {
+    window.location.hash = "#/game/" + encodeURIComponent(id);
   }
 
   function goToMap(id) {
@@ -79,14 +85,15 @@
   }
 
   /** Sustituye la entrada actual del historial (no deja rastro para el botón atrás). */
-  function replaceWithLibrary() {
+  function replaceWithGames() {
     window.location.replace("#/");
   }
 
   Waypoint.core.router = {
     start: start,
-    goToLibrary: goToLibrary,
+    goToGames: goToGames,
+    goToGame: goToGame,
     goToMap: goToMap,
-    replaceWithLibrary: replaceWithLibrary,
+    replaceWithGames: replaceWithGames,
   };
 })(window.Waypoint);

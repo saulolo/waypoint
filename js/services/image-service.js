@@ -1,5 +1,5 @@
 /*
- * Servicio de imágenes: validar tipo, medir, generar miniatura y detectar imágenes grandes.
+ * Servicio de imágenes: validar tipo, medir, generar miniatura o portada y detectar imágenes grandes.
  * No toca el DOM de la UI; usa createImageBitmap y OffscreenCanvas.
  */
 (function (Waypoint) {
@@ -23,6 +23,10 @@
   var THUMBNAIL_MAX_SIDE_PX = 320;
   var THUMBNAIL_TYPE = "image/webp";
   var THUMBNAIL_QUALITY = 0.8;
+
+  var COVER_MAX_SIDE_PX = 600;
+  var COVER_TYPE = "image/webp";
+  var COVER_QUALITY = 0.85;
 
   /**
    * Error de imagen no válida.
@@ -119,27 +123,52 @@
   }
 
   /**
-   * Genera la miniatura WebP con el lado mayor a 320 px (las imágenes más pequeñas no se amplían).
+   * Reduce una imagen a WebP con el lado mayor en maxSide px (las más pequeñas no se amplían).
    * El redimensionado lo hace createImageBitmap para no decodificar la imagen entera en un canvas.
+   */
+  function resizeToWebp(blob, width, height, maxSide, type, quality) {
+    var scale = Math.min(1, maxSide / Math.max(width, height));
+    var targetWidth = Math.max(1, Math.round(width * scale));
+    var targetHeight = Math.max(1, Math.round(height * scale));
+
+    return createImageBitmap(blob, {
+      resizeWidth: targetWidth,
+      resizeHeight: targetHeight,
+      resizeQuality: "high",
+    }).then(function (bitmap) {
+      var canvas = new OffscreenCanvas(targetWidth, targetHeight);
+      canvas.getContext("2d").drawImage(bitmap, 0, 0);
+      bitmap.close();
+      return canvas.convertToBlob({ type: type, quality: quality });
+    });
+  }
+
+  /**
+   * Genera la miniatura WebP con el lado mayor a 320 px.
    * @param {Blob} blob
    * @param {number} width   Ancho original.
    * @param {number} height  Alto original.
    * @returns {Promise<Blob>}
    */
   function createThumbnail(blob, width, height) {
-    var scale = Math.min(1, THUMBNAIL_MAX_SIDE_PX / Math.max(width, height));
-    var thumbWidth = Math.max(1, Math.round(width * scale));
-    var thumbHeight = Math.max(1, Math.round(height * scale));
+    return resizeToWebp(blob, width, height, THUMBNAIL_MAX_SIDE_PX, THUMBNAIL_TYPE, THUMBNAIL_QUALITY);
+  }
 
-    return createImageBitmap(blob, {
-      resizeWidth: thumbWidth,
-      resizeHeight: thumbHeight,
-      resizeQuality: "high",
-    }).then(function (bitmap) {
-      var canvas = new OffscreenCanvas(thumbWidth, thumbHeight);
-      canvas.getContext("2d").drawImage(bitmap, 0, 0);
-      bitmap.close();
-      return canvas.convertToBlob({ type: THUMBNAIL_TYPE, quality: THUMBNAIL_QUALITY });
+  /**
+   * Valida una imagen (JPG, PNG o WebP) y genera la portada WebP con el lado mayor a 600 px.
+   * La imagen original no se conserva.
+   * @param {Blob|File} blob  Un File del selector o del arrastre, o un Blob pegado (sin nombre).
+   * @returns {Promise<Blob>}
+   *   Rechaza con InvalidImageError si no es una imagen admitida o no se puede leer.
+   */
+  function createCover(blob) {
+    var file = blob;
+    if (!blob.name) {
+      // Los Blob pegados no tienen nombre: se les da uno para los mensajes de error.
+      file = new File([blob], "portada", { type: blob.type });
+    }
+    return inspect(file).then(function (info) {
+      return resizeToWebp(file, info.width, info.height, COVER_MAX_SIDE_PX, COVER_TYPE, COVER_QUALITY);
     });
   }
 
@@ -148,10 +177,12 @@
     LARGE_MAX_SIDE_PX: LARGE_MAX_SIDE_PX,
     LARGE_MAX_BYTES: LARGE_MAX_BYTES,
     THUMBNAIL_MAX_SIDE_PX: THUMBNAIL_MAX_SIDE_PX,
+    COVER_MAX_SIDE_PX: COVER_MAX_SIDE_PX,
     InvalidImageError: InvalidImageError,
     detectMimeType: detectMimeType,
     detectLarge: detectLarge,
     inspect: inspect,
     createThumbnail: createThumbnail,
+    createCover: createCover,
   };
 })(window.Waypoint);

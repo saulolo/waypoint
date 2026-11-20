@@ -6,7 +6,7 @@
 //
 // Devuelve { criteria: { "<nº>_<nombre>": { pass, detail } } }, numerados como en la spec.
 // Fuera de este script: F5 y persistencia (reejecutar cdp-eval con el mismo WP_PROFILE sobre
-// "#/map/<inazumaId>" y "#/"), y las reglas de capas (grep). El reinicio del PC es manual.
+// "#/map/<inazumaId>" y "#/game/<gameId>"; ambos ids salen en el resultado), y las reglas de capas (grep). El reinicio del PC es manual.
 (async () => {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const waitFor = async (fn, ms = 8000) => { const t = Date.now(); while (Date.now() - t < ms) { if (fn()) return true; await sleep(50); } return false; };
@@ -42,6 +42,12 @@
     fire("dragenter"); fire("dragover"); fire("drop");
   };
   const card = (n) => $$(".map-card").find((c) => c.querySelector(".map-card__name").textContent === n);
+
+  // Desde SPEC 03 todo mapa vive en un juego: se crea uno por servicio y se trabaja en su vista.
+  const game = await Waypoint.services.gameService.create("Juego de prueba", null);
+  const gameHash = "#/game/" + game.id;
+  window.location.hash = gameHash;
+  await waitFor(() => !!$(".drop-zone"));
 
   // 2. Estado vacío
   ok("02_empty_state", $(".drop-zone") && names().length === 0, $(".drop-zone__title")?.textContent);
@@ -168,27 +174,27 @@
   const maxScale = ir().width / 3000;
   ok("16_zoom_limits", minHeld && Math.abs(maxScale - 4) < 0.01, { maxScale: +maxScale.toFixed(3), minHeld });
 
-  // 18. ← Biblioteca y botón atrás
+  // 18. ← Mapas (vuelve al juego) y botón atrás
   $(".viewer__back").click();
   await waitFor(() => names().length === 5); await sleep(300);
-  const backBtn = window.location.hash === "#/" && !$(".leaflet-container");
+  const backBtn = window.location.hash === gameHash && !$(".leaflet-container");
   // 8. El abierto pasa primero
   ok("08_opened_goes_first", names()[0] === "Lapis Renombrado", names());
   card("Mondstadt").querySelector("a").click();
   await waitFor(() => !!$(".leaflet-image-layer")); await sleep(300);
   history.back();
   await waitFor(() => names().length === 5); await sleep(300);
-  ok("18_back_and_browser_back", backBtn && window.location.hash === "#/" && names()[0] === "Mondstadt");
+  ok("18_back_and_browser_back", backBtn && window.location.hash === gameHash && names()[0] === "Mondstadt");
 
-  // 20. #/map/no-existe
+  // 20. #/map/no-existe (vuelve al inicio de juegos)
   clearNotices();
   window.location.hash = "#/map/no-existe";
-  await waitFor(() => window.location.hash === "#/" && names().length === 5); await sleep(300);
+  await waitFor(() => window.location.hash === "#/" && !!$(".games")); await sleep(300);
   ok("20_missing_map_redirects", window.location.hash === "#/" && notices().some((n) => n.includes("no existe")), notices());
 
   // Dejar Inazuma para F5.
   const inazumaId = maps.find((m) => m.name === "Inazuma").id;
   localStorage.setItem("acc-inazuma", inazumaId);
   localStorage.setItem("acc-names", JSON.stringify(names()));
-  return { criteria: C, inazumaId };
+  return { criteria: C, inazumaId, gameId: game.id };
 })()

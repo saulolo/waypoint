@@ -1,0 +1,314 @@
+/* ---------- Juegos: cabecera de la vista de juego y placeholder de portada (SPEC 03) ---------- */
+
+/* Cabecera compacta de la vista de juego */
+.game-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.game-head__cover {
+  flex: none;
+  width: 54px;
+  aspect-ratio: 3 / 4;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+}
+
+.game-head__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-head__info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.game-head__title {
+  overflow: hidden;
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-lg);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Placeholder arcade: marco neón con la inicial del nombre */
+.game-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border: 2px solid var(--color-neon-cyan);
+  background: var(--color-surface-raised);
+  color: var(--color-neon-cyan);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-lg);
+  text-shadow: 0 0 8px currentColor;
+}
+
+.game-placeholder--card {
+  font-size: var(--font-size-pixel-xl);
+}
+
+/* ---------- Cuadrícula de tarjetas de juego (3:4, tipo carátula) ---------- */
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--space-5);
+}
+
+/* Acento rotativo por posición, en el orden de SPEC 02: cian, magenta, amarillo, verde. */
+.game-card {
+  --card-accent: var(--color-neon-cyan);
+  --card-accent-glow: var(--glow-cyan);
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg-3);
+  transition: transform 180ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+
+.game-card:nth-child(4n + 2) {
+  --card-accent: var(--color-neon-magenta);
+  --card-accent-glow: var(--glow-magenta);
+}
+
+.game-card:nth-child(4n + 3) {
+  --card-accent: var(--color-neon-yellow);
+  --card-accent-glow: var(--glow-yellow);
+}
+
+.game-card:nth-child(4n + 4) {
+  --card-accent: var(--color-neon-green);
+  --card-accent-glow: var(--glow-green);
+}
+
+.game-card:hover,
+.game-card:focus-within {
+  border-color: var(--card-accent);
+  box-shadow: var(--card-accent-glow);
+  transform: translateY(-6px);
+}
+
+.game-card__link {
+  display: block;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.game-card__link:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: -2px;
+}
+
+.game-card__cover {
+  position: absolute;
+  inset: 0;
+}
+
+.game-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-card__cover .game-placeholder {
+  border-color: var(--card-accent);
+  color: var(--card-accent);
+}
+
+/* Nombre y nº de mapas sobre la portada */
+.game-card__body {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-height: 70%;
+  overflow: hidden;
+  padding: var(--space-3);
+  border-top: 1px solid var(--card-accent);
+  background: var(--color-label-bg);
+}
+
+.game-card__name {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-sm);
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.game-card__meta {
+  padding: 2px var(--space-2);
+  border: 1px solid var(--card-accent);
+  color: var(--card-accent);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-xs);
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+/* ---------- Estado vacío del inicio ---------- */
+
+.games-empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 280px;
+  padding: var(--space-7) var(--space-5);
+  border: 2px dashed var(--color-neon-cyan);
+  background: var(--color-panel-bg);
+  box-shadow: var(--shadow-panel-cyan);
+  text-align: center;
+}
+
+.games-empty__title {
+  color: var(--color-neon-cyan);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-md);
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+  text-shadow: var(--glow-cyan);
+  text-transform: uppercase;
+}
+
+.games-empty__hint {
+  color: var(--color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-card,
+  .game-card:hover,
+  .game-card:focus-within {
+    transform: none;
+  }
+}
+
+/* ---------- Diálogo de juego: zona de portada ---------- */
+
+.game-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cover-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 2px dashed var(--color-line);
+  background: var(--color-panel-bg);
+  text-align: center;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.cover-zone--dragging {
+  border-color: var(--color-neon-cyan);
+  box-shadow: var(--shadow-panel-cyan);
+}
+
+.cover-zone__preview {
+  width: 120px;
+  aspect-ratio: 3 / 4;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+}
+
+.cover-zone__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cover-zone__preview .game-placeholder {
+  border-color: var(--color-line);
+  color: var(--color-text-faint);
+  text-shadow: none;
+}
+
+.cover-zone__hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.cover-zone--filled .cover-zone__hint {
+  display: none;
+}
+
+.cover-zone__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+/* ---------- Acciones de la tarjeta de juego ---------- */
+
+.game-card__actions {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 2;
+  display: flex;
+  gap: var(--space-1);
+}
+
+.game-card__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--color-line);
+  background: var(--color-label-bg);
+  color: var(--card-accent);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
+}
+
+.game-card__action:hover {
+  border-color: var(--card-accent);
+  box-shadow: var(--card-accent-glow);
+}
+
+.game-card__action--remove:hover {
+  border-color: var(--color-neon-magenta);
+  color: var(--color-neon-magenta);
+  box-shadow: var(--glow-magenta);
+}
+
+.game-card__action:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: 1px;
+}

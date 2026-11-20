@@ -1,11 +1,14 @@
 /*
- * Vista de biblioteca: cuadrícula de tarjetas, estado vacío y carga por selector.
+ * Vista de juego (#/game/<id>): cabecera del juego y cuadrícula de mapas, estado vacío y carga
+ * por selector o arrastrando.
  * Nunca accede a IndexedDB: todo pasa por Waypoint.services.mapService.
  */
 (function (Waypoint) {
   "use strict";
 
   var mapService = Waypoint.services.mapService;
+  var gameService = Waypoint.services.gameService;
+  var router = Waypoint.core.router;
   var notice = Waypoint.ui.notice;
   var dialog = Waypoint.ui.dialog;
 
@@ -67,12 +70,15 @@
   /**
    * Monta la vista en el contenedor y devuelve la función de desmontaje.
    * @param {HTMLElement} container
+   * @param {{id: string}} params  Id del juego cuyos mapas se muestran.
    * @returns {function}
    */
-  function mount(container) {
+  function mount(container, params) {
+    var gameId = params.id;
     var alive = true;
     var busy = false;
     var objectUrls = [];
+    var coverUrl = null;
 
     var root = el("section", "library");
     root.setAttribute("aria-labelledby", "library-title");
@@ -85,29 +91,25 @@
     fileInput.tabIndex = -1;
     fileInput.setAttribute("aria-hidden", "true");
 
-    // Hero: título, subtítulo con cursor y siluetas flotando (decorativas).
-    var hero = el("header", "library-hero");
-    hero.appendChild(Waypoint.ui.silhouettes.create());
-    hero.appendChild(el("h1", "library-hero__title", "Waypoint"));
-    var heroSubtitle = el("p", "library-hero__subtitle");
-    var heroSubtitleText = document.createTextNode("");
-    heroSubtitle.appendChild(heroSubtitleText);
-    heroSubtitle.appendChild(el("span", "blink-cursor", "_"));
-    hero.appendChild(heroSubtitle);
-
-    var toolbar = el("div", "library__toolbar");
-    var heading = el("div", "library__heading");
-    var title = el("h2", "library__title", "Biblioteca");
+    // Cabecera del juego: volver, portada pequeña (o placeholder), nombre, nº de mapas y carga.
+    var head = el("header", "game-head");
+    var back = el("a", "btn btn--ghost game-head__back", "← Juegos");
+    back.href = "#/";
+    var coverSlot = el("div", "game-head__cover");
+    var heading = el("div", "game-head__info");
+    var title = el("h1", "game-head__title neon-cyan");
     title.id = "library-title";
     var count = el("p", "library__count");
     heading.appendChild(title);
     heading.appendChild(count);
 
-    var loadButton = el("button", "btn btn--primary", "Cargar mapas");
+    var loadButton = el("button", "btn btn--primary game-head__load", "Cargar mapas");
     loadButton.type = "button";
 
-    toolbar.appendChild(heading);
-    toolbar.appendChild(loadButton);
+    head.appendChild(back);
+    head.appendChild(coverSlot);
+    head.appendChild(heading);
+    head.appendChild(loadButton);
 
     var content = el("div", "library__content");
 
@@ -119,12 +121,29 @@
     dropOverlayBox.appendChild(el("p", "drop-overlay__hint", "JPG, PNG o WebP"));
     dropOverlay.appendChild(dropOverlayBox);
 
-    root.appendChild(hero);
-    root.appendChild(toolbar);
+    root.appendChild(head);
     root.appendChild(content);
     root.appendChild(fileInput);
     root.appendChild(dropOverlay);
     container.appendChild(root);
+
+    function renderHeader(game) {
+      title.textContent = game.name;
+      title.title = game.name;
+
+      coverSlot.innerHTML = "";
+      if (game.cover) {
+        coverUrl = URL.createObjectURL(game.cover);
+        var img = el("img", "game-head__img");
+        img.src = coverUrl;
+        img.alt = "";
+        coverSlot.appendChild(img);
+      } else {
+        var placeholder = el("div", "game-placeholder", Array.from(game.name)[0].toUpperCase());
+        placeholder.setAttribute("aria-hidden", "true");
+        coverSlot.appendChild(placeholder);
+      }
+    }
 
     function revokeThumbnails() {
       objectUrls.forEach(function (url) {
@@ -304,9 +323,7 @@
 
       var isEmpty = maps.length === 0;
       root.classList.toggle("library--empty", isEmpty);
-      count.textContent = isEmpty ? "" : plural(maps.length, "mapa", "mapas");
-      loadButton.hidden = isEmpty;
-      heroSubtitleText.data = isEmpty ? "CARGA UN MAPA PARA EMPEZAR " : "INSERTA UN MAPA ";
+      count.textContent = plural(maps.length, "mapa", "mapas");
 
       if (isEmpty) {
         renderEmpty();
@@ -316,7 +333,7 @@
     }
 
     function refresh() {
-      return mapService.listSorted().then(function (maps) {
+      return mapService.listSorted(gameId).then(function (maps) {
         if (alive) {
           render(maps);
         }
@@ -359,7 +376,7 @@
       }
       setBusy(true);
       return mapService
-        .importFiles(files, confirmLargeImage)
+        .importFiles(gameId, files, confirmLargeImage)
         .then(function (report) {
           reportImport(report, files.length);
           return refresh();
@@ -439,10 +456,26 @@
     window.addEventListener("dragleave", onDragLeave);
     window.addEventListener("drop", onDrop);
 
-    refresh().catch(function (error) {
-      console.error("[library] Error al listar los mapas:", error);
-      notice.show("No se pudo cargar la biblioteca.", { type: "error" });
-    });
+    // Abrir el juego cuenta como uso. Si no existe, vuelve al inicio con un aviso.
+    gameService
+      .touch(gameId)
+      .then(function (game) {
+        if (alive) {
+          renderHeader(game);
+        }
+        return refresh();
+      })
+      .catch(function (error) {
+        if (error instanceof gameService.GameNotFoundError) {
+          if (alive) {
+            notice.show("Ese juego no existe", { type: "warning" });
+            router.replaceWithGames();
+          }
+          return;
+        }
+        console.error("[library] Error al listar los mapas:", error);
+        notice.show("No se pudo cargar la biblioteca.", { type: "error" });
+      });
 
     return function unmount() {
       alive = false;
@@ -451,6 +484,10 @@
       window.removeEventListener("dragleave", onDragLeave);
       window.removeEventListener("drop", onDrop);
       revokeThumbnails();
+      if (coverUrl) {
+        URL.revokeObjectURL(coverUrl);
+        coverUrl = null;
+      }
       container.innerHTML = "";
     };
   }

@@ -1,18 +1,19 @@
 /*
  * Conexión a IndexedDB.
- * Base "waypoint", esquema v1: stores "maps", "images" y "markers".
+ * Base "waypoint", esquema v2: stores "games", "maps", "images" y "markers".
  * No toca el DOM ni conoce la UI.
  *
  * Migraciones: añadir un caso en MIGRATIONS por cada versión nueva y subir DB_VERSION.
- * Cada migración se aplica en orden desde oldVersion + 1 hasta DB_VERSION.
+ * Cada migración recibe (db, tx) y se aplica en orden desde oldVersion + 1 hasta DB_VERSION.
  */
 (function (Waypoint) {
   "use strict";
 
   var DB_NAME = "waypoint";
-  var DB_VERSION = 1;
+  var DB_VERSION = 2;
 
   var STORES = {
+    games: "games",
     maps: "maps",
     images: "images",
     markers: "markers",
@@ -26,9 +27,21 @@
       // Imagen original pesada. Solo se lee al abrir el visor.
       db.createObjectStore(STORES.images, { keyPath: "mapId" });
 
-      // Vacío en SPEC 01; SPEC 03 define el resto de campos.
+      // Vacío en SPEC 01; SPEC 04 define el resto de campos.
       var markers = db.createObjectStore(STORES.markers, { keyPath: "id" });
       markers.createIndex("mapId", "mapId", { unique: false });
+    },
+
+    // SPEC 03: todo mapa pertenece a un juego. Los datos de v1 se descartan (aceptado por el usuario).
+    2: function (db, tx) {
+      tx.objectStore(STORES.maps).clear();
+      tx.objectStore(STORES.images).clear();
+      tx.objectStore(STORES.markers).clear();
+
+      // Carpeta de juego con portada (Blob WebP o null).
+      db.createObjectStore(STORES.games, { keyPath: "id" });
+
+      tx.objectStore(STORES.maps).createIndex("gameId", "gameId", { unique: false });
     },
   };
 
@@ -42,11 +55,11 @@
   DbUnavailableError.prototype = Object.create(Error.prototype);
   DbUnavailableError.prototype.constructor = DbUnavailableError;
 
-  function upgrade(db, oldVersion, newVersion) {
+  function upgrade(db, tx, oldVersion, newVersion) {
     for (var version = oldVersion + 1; version <= newVersion; version++) {
       var migrate = MIGRATIONS[version];
       if (migrate) {
-        migrate(db);
+        migrate(db, tx);
       }
     }
   }
@@ -74,7 +87,7 @@
       }
 
       request.onupgradeneeded = function (event) {
-        upgrade(request.result, event.oldVersion, event.newVersion || DB_VERSION);
+        upgrade(request.result, request.transaction, event.oldVersion, event.newVersion || DB_VERSION);
       };
 
       request.onsuccess = function () {

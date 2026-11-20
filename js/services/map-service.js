@@ -1,5 +1,5 @@
 /*
- * Servicio de mapas: importar, listar, renombrar, borrar y abrir.
+ * Servicio de mapas (dentro de un juego): importar, listar, renombrar, borrar y abrir.
  * Orquesta image-service (imágenes) y maps-repository (persistencia).
  * No toca el DOM de la UI.
  */
@@ -7,6 +7,7 @@
   "use strict";
 
   var repository = Waypoint.data.mapsRepository;
+  var gameService = Waypoint.services.gameService;
   var imageService = Waypoint.services.imageService;
 
   var NAME_MAX_LENGTH = 100;
@@ -67,11 +68,12 @@
     return b.createdAt - a.createdAt;
   }
 
-  function importOne(file, info) {
+  function importOne(gameId, file, info) {
     return imageService.createThumbnail(file, info.width, info.height).then(function (thumbnail) {
       var now = Date.now();
       var map = {
         id: crypto.randomUUID(),
+        gameId: gameId,
         name: nameFromFile(file.name),
         width: info.width,
         height: info.height,
@@ -87,8 +89,9 @@
   }
 
   /**
-   * Importa varios archivos, uno detrás de otro.
+   * Importa varios archivos en un juego, uno detrás de otro.
    *
+   * @param {string} gameId  Juego destino; debe existir.
    * @param {FileList|File[]} files
    * @param {function(File, object): Promise<boolean>} [onLargeImage]
    *   Se llama con (file, info) si la imagen supera los límites de aviso.
@@ -99,13 +102,22 @@
    *   skipped: {fileName: string, reason: "unsupported-type"|"decode-failed"|"cancelled"|"error", error?: Error}[],
    *   quotaExceeded: boolean
    * }>}
+   *   Rechaza con GameNotFoundError si el juego no existe.
    *   Si se llena el almacenamiento, se detiene y marca quotaExceeded; los archivos
    *   restantes no se intentan.
    */
-  function importFiles(files, onLargeImage) {
+  function importFiles(gameId, files, onLargeImage) {
     var list = Array.prototype.slice.call(files || []);
     var report = { imported: [], skipped: [], quotaExceeded: false };
 
+    return gameService
+      .get(gameId)
+      .then(function () {
+        return importAll(gameId, list, report, onLargeImage);
+      });
+  }
+
+  function importAll(gameId, list, report, onLargeImage) {
     return list
       .reduce(function (chain, file) {
         return chain.then(function () {
@@ -128,7 +140,7 @@
                 report.skipped.push({ fileName: file.name, reason: "cancelled" });
                 return;
               }
-              return importOne(file, info).then(function (map) {
+              return importOne(gameId, file, info).then(function (map) {
                 report.imported.push(map);
               });
             })
@@ -149,10 +161,11 @@
   }
 
   /**
-   * @returns {Promise<object[]>} Mapas en el orden de la biblioteca.
+   * @param {string} gameId
+   * @returns {Promise<object[]>} Mapas del juego en el orden de la biblioteca.
    */
-  function listSorted() {
-    return repository.list().then(function (maps) {
+  function listSorted(gameId) {
+    return repository.listByGame(gameId).then(function (maps) {
       return maps.sort(compareForLibrary);
     });
   }
@@ -189,7 +202,8 @@
   }
 
   /**
-   * Abre un mapa: devuelve metadatos + imagen original y actualiza lastOpenedAt.
+   * Abre un mapa: devuelve metadatos + imagen original y actualiza lastOpenedAt
+   * del mapa y lastUsedAt de su juego.
    * @param {string} id
    * @returns {Promise<{map: object, blob: Blob}>}  Rechaza con MapNotFoundError.
    */
@@ -203,11 +217,13 @@
       return repository
         .update(id, { lastOpenedAt: Date.now() })
         .then(function (updated) {
-          return { map: updated || map, blob: blob };
+          return gameService.touch(map.gameId).then(function () {
+            return { map: updated || map, blob: blob };
+          });
         })
         .catch(function (error) {
-          // Si no se puede guardar lastOpenedAt (p. ej. sin espacio), el mapa se abre igualmente.
-          console.warn("[map-service] No se pudo actualizar lastOpenedAt:", error);
+          // Si no se puede guardar lastOpenedAt o lastUsedAt (p. ej. sin espacio), el mapa se abre igualmente.
+          console.warn("[map-service] No se pudo actualizar lastOpenedAt o lastUsedAt:", error);
           return { map: map, blob: blob };
         });
     });
