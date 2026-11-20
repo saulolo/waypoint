@@ -48,7 +48,7 @@
     root.setAttribute("aria-label", "Visor de mapa");
 
     var bar = el("header", "viewer__bar");
-    var back = el("a", "btn btn--ghost viewer__back", "← Biblioteca");
+    var back = el("a", "btn btn--ghost viewer__back", "← Mapas");
     back.href = "#/";
     var title = el("h1", "viewer__title", "Cargando…");
     bar.appendChild(back);
@@ -117,6 +117,7 @@
       title.textContent = map.name;
       title.title = map.name;
       document.title = map.name + " · " + APP_TITLE;
+      back.href = "#/game/" + encodeURIComponent(map.gameId);
 
       imageUrl = URL.createObjectURL(result.blob);
       status.remove();
@@ -142,7 +143,7 @@
           notice.show("No se pudo abrir el mapa.", { type: "error" });
         }
         // replace: el id inexistente no queda en el historial del botón atrás.
-        router.replaceWithLibrary();
+        router.replaceWithGames();
       });
 
     return function unmount() {

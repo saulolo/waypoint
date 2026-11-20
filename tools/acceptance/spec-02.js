@@ -85,8 +85,8 @@
     { text: brand.innerText, shadow: css(brand).textShadow }
   );
 
-  // 9. Biblioteca vacía: subtítulo del hero
-  ok("09_hero_empty_subtitle", $(".library-hero__subtitle").innerText === "CARGA UN MAPA PARA EMPEZAR _", $(".library-hero__subtitle").innerText);
+  // 9. Inicio sin juegos: subtítulo del hero
+  ok("09_hero_empty_subtitle", $(".library-hero__subtitle").innerText === "CREA UN JUEGO PARA EMPEZAR _", $(".library-hero__subtitle").innerText);
 
   // 10. 8 siluetas, aria-hidden y sin eventos de puntero
   const sil = $(".library-hero .silhouettes");
@@ -111,27 +111,47 @@
     rmAnims
   );
 
-  // 11. Soltar una imagen sobre una silueta crea su tarjeta
+  // 11. Soltar una imagen sobre una silueta (inicio): no crea mapas, no navega y avisa
   const s3 = sil.querySelector(".s3").getBoundingClientRect();
   const sx = s3.left + s3.width / 2, sy = s3.top + s3.height / 2;
   const target = document.elementFromPoint(sx, sy);
   const dt = new DataTransfer(); dt.items.add(await make("Silueta.png", 10));
-  ["dragenter", "dragover", "drop"].forEach((t) =>
-    target.dispatchEvent(new DragEvent(t, { bubbles: true, cancelable: true, clientX: sx, clientY: sy, dataTransfer: dt }))
-  );
-  await waitFor(() => cards().length === 1); await sleep(300);
-  ok("11_drop_on_silhouette", !target.closest(".silhouettes") && cards().length === 1, { target: target.className, cards: cards().length });
-
-  // 8. Con mapas: título y subtítulo del hero
+  let prevented = false;
+  ["dragenter", "dragover", "drop"].forEach((t) => {
+    const ev = new DragEvent(t, { bubbles: true, cancelable: true, clientX: sx, clientY: sy, dataTransfer: dt });
+    target.dispatchEvent(ev);
+    if (t === "drop") prevented = ev.defaultPrevented;
+  });
+  await sleep(300);
+  const dropNotices = $$(".notice__message").map((n) => n.textContent);
   ok(
-    "08_hero_with_maps",
-    $(".library-hero__title").innerText === "WAYPOINT" && $(".library-hero__subtitle").innerText === "INSERTA UN MAPA _",
+    "11_drop_on_silhouette",
+    !target.closest(".silhouettes") && prevented && ["", "#/"].includes(window.location.hash) && cards().length === 0 &&
+      dropNotices.some((n) => n.includes("Entra en un juego")),
+    { target: target.className, prevented, dropNotices }
+  );
+  clearNotices();
+
+  // Desde SPEC 03 los mapas viven en un juego: se crea uno por servicio.
+  const game = await Waypoint.services.gameService.create("Juego de prueba", null);
+  const gameHash = "#/game/" + game.id;
+  window.location.hash = gameHash;
+  await waitFor(() => !!$(".game-head"));
+  window.location.hash = "#/";
+  await waitFor(() => $(".library-hero__subtitle")?.innerText === "MI MAPA MI 100% _");
+
+  // 8. Con juegos: título y subtítulo del hero
+  ok(
+    "08_hero_with_games",
+    $(".library-hero__title").innerText === "WAYPOINT" && $(".library-hero__subtitle").innerText === "MI MAPA MI 100% _",
     [$(".library-hero__title").innerText, $(".library-hero__subtitle").innerText]
   );
 
-  // Hasta 12 mapas
+  // Hasta 12 mapas, dentro del juego
+  window.location.hash = gameHash;
+  await waitFor(() => !!$('.library input[type="file"]'));
   const more = [];
-  for (let i = 2; i <= 12; i++) more.push(await make("Mapa " + i + ".png", i * 30));
+  for (let i = 1; i <= 12; i++) more.push(await make("Mapa " + i + ".png", i * 30));
   choose(more);
   await waitFor(() => cards().length === 12, 15000); await sleep(400);
   clearNotices();

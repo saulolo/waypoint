@@ -7,8 +7,11 @@
 
   function startRouter(container) {
     Waypoint.core.router.start({
-      library: function () {
-        return Waypoint.ui.libraryView.mount(container);
+      games: function () {
+        return Waypoint.ui.gamesView.mount(container);
+      },
+      game: function (params) {
+        return Waypoint.ui.libraryView.mount(container, params);
       },
       viewer: function (params) {
         return Waypoint.ui.viewerView.mount(container, params);

@@ -14,6 +14,8 @@ Uso y limitaciones para el usuario: `README.md`. Qué se construye y por qué: `
 
 Capas con dependencia en un solo sentido: `ui → services → data`. `core` (namespace, router) lo puede usar cualquier capa.
 
+Rutas (`js/core/router.js`): `#/` → `games-view` (inicio con hero y juegos), `#/game/<id>` → `library-view` (cabecera del juego + mapas filtrados por `gameId`; reutiliza `.library` y `.map-card`), `#/map/<id>` → `viewer-view` ("← Mapas" vuelve a `#/game/<gameId>`). Cualquier otro hash vuelve a `#/`.
+
 - `data/` habla con IndexedDB y nunca toca `document`.
 - `services/` contiene la lógica; puede usar `createImageBitmap`/`OffscreenCanvas`, pero no el DOM de la UI.
 - `ui/` nunca usa `indexedDB`: siempre pasa por `services`.
@@ -23,7 +25,7 @@ Un archivo nuevo se añade a `index.html` **en orden de capa**: un script solo p
 
 Las vistas exponen `mount(container, params)` y devuelven una función de desmontaje; el router la llama al cambiar de ruta. Ahí se libera todo: listeners de `window`, object URLs y el mapa Leaflet.
 
-El modelo de datos (stores `maps`, `images`, `markers`), la conversión de coordenadas y el orden de la biblioteca están en `specs/01-biblioteca-de-mapas.md` → *Modelo de datos*. Las migraciones de esquema van en `MIGRATIONS[version]` de `js/data/db.js`.
+El modelo de datos (stores `maps`, `images`, `markers`), la conversión de coordenadas y el orden de la biblioteca están en `specs/01-biblioteca-de-mapas.md` → *Modelo de datos*. Desde el esquema v2 (SPEC 03) hay además el store `games` y cada mapa lleva `gameId` (índice `gameId`); ver `specs/03-carpetas-de-juegos.md` → *Modelo de datos*. Las migraciones de esquema van en `MIGRATIONS[version]` de `js/data/db.js` y reciben `(db, tx)`; `MIGRATIONS[2]` vacía `maps`, `images` y `markers`.
 
 ## Convenciones
 
@@ -33,7 +35,9 @@ El modelo de datos (stores `maps`, `images`, `markers`), la conversión de coord
 - Tipografía: `--font-pixel` (Press Start 2P) para títulos, botones y nombres de mapa, con sus tamaños `--font-size-pixel-*`; `--font-mono` para el resto. Lo que escribe el usuario (inputs) va siempre en mono.
 - Movimiento: `prefers-reduced-motion: reduce` anula todas las animaciones con una regla global en `css/effects.css`; los `transform` de hover se anulan aparte en el CSS del componente.
 - Errores de dominio como clases propias (`InvalidImageError`, `MapNotFoundError`, `InvalidNameError`, `DbUnavailableError`); la UI decide el aviso con `instanceof` o `mapService.isQuotaError()`.
-- Avisos al usuario con `Waypoint.ui.notice.show()`; diálogos con `Waypoint.ui.dialog.{rename,confirm}`. `prompt()`/`confirm()` nativos no se usan.
+- Errores de juego: `GameNotFoundError` e `InvalidNameError` en `game-service.js` (clase aparte de la de `map-service.js`: usa `instanceof` contra la del servicio que corresponda).
+- Avisos al usuario con `Waypoint.ui.notice.show()`; diálogos con `Waypoint.ui.dialog.{rename,confirm}` y `Waypoint.ui.gameDialog.open()` (crear juego / cambiar portada; usa `dialog.open`). `prompt()`/`confirm()` nativos no se usan.
+- Borrar un juego es una sola transacción sobre `games`, `maps`, `images` y `markers` (`gamesRepository.remove`). El nº de mapas por juego se cuenta con `index("gameId").count()`.
 
 ## Gotchas
 
@@ -51,7 +55,7 @@ El modelo de datos (stores `maps`, `images`, `markers`), la conversión de coord
 
 Verifica en el navegador con `tools/cdp-eval.mjs` (Chrome headless vía CDP; su cabecera documenta argumentos, variables y la entrada real de ratón/teclado). Playwright MCP bloquea `file://` y `chrome --dump-dom` congela IndexedDB, así que no sirven aquí.
 
-- Regresión: `tools/acceptance/spec-01.js` y `spec-02.js`, cada uno con un `WP_PROFILE` vacío. Cada spec nueva añade su `tools/acceptance/spec-NN.js`.
+- Regresión: `tools/acceptance/spec-01.js` y `spec-02.js` (y `spec-03.js` cuando exista), cada uno con un `WP_PROFILE` vacío. Crean un juego por servicio y trabajan dentro de `#/game/<id>`. Cada spec nueva añade su `tools/acceptance/spec-NN.js`.
 - La entrada sintética (`new KeyboardEvent`) no cierra un `<dialog>` con Esc: usa `window.cdpKey("Escape")`.
 - `window.cdpInput` acepta cualquier método CDP, no solo entrada: `Emulation.setEmulatedMedia` emula `prefers-reduced-motion` y `Emulation.setDeviceMetricsOverride` cambia la ventana. `clearDeviceMetricsOverride` deja una ventana más baja en headless: vuelve a fijar 1280×800.
 - Con `file://`, leer `document.styleSheets[i].cssRules` lanza `SecurityError`: comprueba estilos con `getComputedStyle`.

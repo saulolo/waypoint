@@ -72,6 +72,17 @@
   }
 
   /**
+   * Lista los metadatos de los mapas de un juego (índice "gameId"), sin ordenar.
+   * @param {string} gameId
+   * @returns {Promise<object[]>}
+   */
+  function listByGame(gameId) {
+    return transaction(STORES.maps, "readonly").then(function (tx) {
+      return result(tx.objectStore(STORES.maps).index("gameId").getAll(gameId));
+    });
+  }
+
+  /**
    * @param {string} id
    * @returns {Promise<object|null>} Metadatos del mapa, o null si no existe.
    */
@@ -147,6 +158,7 @@
   Waypoint.data.mapsRepository = {
     add: add,
     list: list,
+    listByGame: listByGame,
     get: get,
     getImage: getImage,
     update: update,

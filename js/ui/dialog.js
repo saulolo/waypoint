@@ -180,5 +180,6 @@
   Waypoint.ui.dialog = {
     confirm: confirm,
     rename: rename,
+    open: openDialog, // para diálogos con contenido propio (game-dialog.js)
   };
 })(window.Waypoint);
