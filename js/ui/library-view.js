@@ -85,9 +85,19 @@
     fileInput.tabIndex = -1;
     fileInput.setAttribute("aria-hidden", "true");
 
+    // Hero: título, subtítulo con cursor y siluetas flotando (decorativas).
+    var hero = el("header", "library-hero");
+    hero.appendChild(Waypoint.ui.silhouettes.create());
+    hero.appendChild(el("h1", "library-hero__title", "Waypoint"));
+    var heroSubtitle = el("p", "library-hero__subtitle");
+    var heroSubtitleText = document.createTextNode("");
+    heroSubtitle.appendChild(heroSubtitleText);
+    heroSubtitle.appendChild(el("span", "blink-cursor", "_"));
+    hero.appendChild(heroSubtitle);
+
     var toolbar = el("div", "library__toolbar");
     var heading = el("div", "library__heading");
-    var title = el("h1", "library__title", "Biblioteca");
+    var title = el("h2", "library__title", "Biblioteca");
     title.id = "library-title";
     var count = el("p", "library__count");
     heading.appendChild(title);
@@ -109,6 +119,7 @@
     dropOverlayBox.appendChild(el("p", "drop-overlay__hint", "JPG, PNG o WebP"));
     dropOverlay.appendChild(dropOverlayBox);
 
+    root.appendChild(hero);
     root.appendChild(toolbar);
     root.appendChild(content);
     root.appendChild(fileInput);
@@ -295,6 +306,7 @@
       root.classList.toggle("library--empty", isEmpty);
       count.textContent = isEmpty ? "" : plural(maps.length, "mapa", "mapas");
       loadButton.hidden = isEmpty;
+      heroSubtitleText.data = isEmpty ? "CARGA UN MAPA PARA EMPEZAR " : "INSERTA UN MAPA ";
 
       if (isEmpty) {
         renderEmpty();

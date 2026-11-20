@@ -7,7 +7,7 @@ Uso y limitaciones para el usuario: `README.md`. Qué se construye y por qué: `
 
 - Se abre con doble clic en `index.html` (`file://`): sin servidor, sin build, sin red.
 - **Scripts clásicos, no ES modules**: los módulos no cargan con `file://` (CORS). Cada archivo es una IIFE que registra su API en `window.Waypoint.{core,data,services,ui}`.
-- Dependencias externas solo copiadas en `vendor/` (Leaflet 1.9.4). Fuentes del sistema; nada de CDN.
+- Dependencias externas solo copiadas en `vendor/` (Leaflet 1.9.4; fuentes Press Start 2P y JetBrains Mono en `vendor/fonts/` con su OFL). Nada de CDN.
 - Objetivo: Chrome/Edge (Chromium). Firefox no está soportado.
 
 ## Arquitectura
@@ -28,7 +28,10 @@ El modelo de datos (stores `maps`, `images`, `markers`), la conversión de coord
 ## Convenciones
 
 - UI, comentarios y mensajes en español; identificadores en inglés.
-- Colores, espacios y radios solo vía tokens de `css/tokens.css` (el tema es provisional).
+- Colores, espacios y radios solo vía tokens de `css/tokens.css` (tema arcade, SPEC 02). Ningún hex ni `rgb()` fuera de ahí, salvo los `fill` de `js/ui/silhouettes.js` y el SVG del ruido de `css/effects.css`.
+- `css/effects.css` guarda lo que no es un componente: capas de fondo (`.app-bg`, `.app-noise`), texto neón (`.neon-*`), `.flicker`, `.blink-cursor`, siluetas y keyframes. Las capas decorativas llevan `pointer-events: none`; el contenido va encima con `z-index: 2`.
+- Tipografía: `--font-pixel` (Press Start 2P) para títulos, botones y nombres de mapa, con sus tamaños `--font-size-pixel-*`; `--font-mono` para el resto. Lo que escribe el usuario (inputs) va siempre en mono.
+- Movimiento: `prefers-reduced-motion: reduce` anula todas las animaciones con una regla global en `css/effects.css`; los `transform` de hover se anulan aparte en el CSS del componente.
 - Errores de dominio como clases propias (`InvalidImageError`, `MapNotFoundError`, `InvalidNameError`, `DbUnavailableError`); la UI decide el aviso con `instanceof` o `mapService.isQuotaError()`.
 - Avisos al usuario con `Waypoint.ui.notice.show()`; diálogos con `Waypoint.ui.dialog.{rename,confirm}`. `prompt()`/`confirm()` nativos no se usan.
 
@@ -38,13 +41,20 @@ El modelo de datos (stores `maps`, `images`, `markers`), la conversión de coord
 - **Leaflet `getBoundsZoom()`** recorta el resultado al `minZoom` vigente (0 por defecto). El zoom de ajuste de una imagen mayor que la ventana es negativo: `viewer-view.js` abre el límite antes de medir.
 - **Origen `file://`**: Chromium trata todos los `file://` como un único origen, así que mover la carpeta no pierde datos y cualquier HTML local abierto en ese perfil ve la misma base.
 - Comprobar `crypto.randomUUID` y `navigator.storage.persist()` es innecesario: existen en `file://`. `persist()` puede devolver `false`.
+- **`clip-path` recorta el `outline` y el `box-shadow` exteriores**: en `.btn` y `.dialog` el contorno de foco va hacia dentro (`outline-offset` negativo).
+- **`[hidden]`** tiene `display: none !important` en `base.css`: sin eso, el `display` de un componente (`.btn` es `inline-flex`) lo pisa.
+- **Cabecera sticky**: `body` usa `min-height: 100%`, no `height`; con `height` la cabecera se suelta al pasar la primera pantalla.
+- **Leaflet** pinta fondo claro en `.leaflet-bar a:hover` y `:focus`: `viewer.css` sobrescribe los dos.
+- Press Start 2P no dibuja bien vocales acentuadas en mayúsculas ("VACÍA" → "VACıA"). Aceptado en SPEC 02.
 
 ## Verificar cambios
 
 Verifica en el navegador con `tools/cdp-eval.mjs` (Chrome headless vía CDP; su cabecera documenta argumentos, variables y la entrada real de ratón/teclado). Playwright MCP bloquea `file://` y `chrome --dump-dom` congela IndexedDB, así que no sirven aquí.
 
-- Regresión de SPEC 01: `tools/acceptance/spec-01.js`, con un `WP_PROFILE` vacío. Cada spec nueva añade su `tools/acceptance/spec-NN.js`.
+- Regresión: `tools/acceptance/spec-01.js` y `spec-02.js`, cada uno con un `WP_PROFILE` vacío. Cada spec nueva añade su `tools/acceptance/spec-NN.js`.
 - La entrada sintética (`new KeyboardEvent`) no cierra un `<dialog>` con Esc: usa `window.cdpKey("Escape")`.
+- `window.cdpInput` acepta cualquier método CDP, no solo entrada: `Emulation.setEmulatedMedia` emula `prefers-reduced-motion` y `Emulation.setDeviceMetricsOverride` cambia la ventana. `clearDeviceMetricsOverride` deja una ventana más baja en headless: vuelve a fijar 1280×800.
+- Con `file://`, leer `document.styleSheets[i].cssRules` lanza `SecurityError`: comprueba estilos con `getComputedStyle`.
 
 ## Flujo de trabajo
 

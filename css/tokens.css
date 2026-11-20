@@ -1,40 +1,119 @@
 /*
  * Tokens de diseño de Waypoint.
- * Tema oscuro provisional inspirado en MapGenie: cambiar el tema solo toca este archivo.
+ * Tema arcade retro (SPEC 02), portado de Arcade Vault. Los efectos viven en css/effects.css,
+ * pero todo color literal vive aquí.
  */
 :root {
+  /* Neón */
+  --color-neon-cyan: #00f5ff;
+  --color-neon-magenta: #ff006e;
+  --color-neon-yellow: #f5ff00;
+  --color-neon-green: #00ff88;
+
+  /* Colores extra de las siluetas del hero (Arcade Vault) */
+  --color-neon-purple: #aa00ff;
+  --color-neon-gold: #ffcf3a;
+  --color-neon-red: #ff3060;
+  --color-neon-sky: #00d4ff;
+
   /* Superficies */
-  --color-bg: #1b1d22;
-  --color-surface: #24272e;
-  --color-surface-raised: #2d3139;
-  --color-surface-hover: #353a43;
-  --color-border: #3a3f48;
+  --color-bg: #0a0a0f;
+  --color-bg-2: #0f0f18;
+  --color-bg-3: #15151f;
+  --color-surface: var(--color-bg-2);
+  --color-surface-raised: var(--color-bg-3);
+  --color-surface-hover: rgba(0, 245, 255, 0.08);
+  --color-border: rgba(0, 245, 255, 0.18);
+
+  /* Líneas */
+  --color-line: rgba(0, 245, 255, 0.18);
+  --color-line-soft: rgba(255, 255, 255, 0.06);
 
   /* Texto */
-  --color-text: #e8e9eb;
-  --color-text-muted: #9aa0aa;
-  --color-text-inverse: #15171b;
+  --color-text: #e6e9ff;
+  --color-text-muted: #8a8fb5;
+  --color-text-faint: #4a4f70;
+  --color-text-inverse: #0a0a0f;
+  --color-white: #ffffff;
 
-  /* Acentos */
-  --color-accent: #f0b429;
-  --color-accent-hover: #f7c948;
-  --color-danger: #e5484d;
-  --color-danger-hover: #f16a6e;
-  --color-success: #46a758;
-  --color-warning: #f0b429;
+  /* Acentos semánticos */
+  --color-accent: var(--color-neon-cyan);
+  --color-accent-hover: var(--color-neon-cyan);
+  --color-danger: var(--color-neon-magenta);
+  --color-danger-hover: var(--color-neon-magenta);
+  --color-success: var(--color-neon-green);
+  --color-warning: var(--color-neon-yellow);
 
   /* Overlays */
-  --color-overlay: rgba(10, 11, 14, 0.7);
-  --color-drop-overlay: rgba(240, 180, 41, 0.12);
+  --color-overlay: rgba(0, 0, 0, 0.75);
+  --color-drop-overlay: rgba(0, 245, 255, 0.08);
+
+  /* Fondo de la app (css/effects.css) */
+  --color-bg-vignette-top: rgba(255, 0, 110, 0.08);
+  --color-bg-vignette-bottom: rgba(0, 245, 255, 0.1);
+  --color-bg-grid: rgba(0, 245, 255, 0.22);
+  --color-bg-scanline: rgba(255, 255, 255, 0.03);
+
+  /* Cabecera */
+  --color-header-bg-top: rgba(10, 10, 15, 0.92);
+  --color-header-bg-bottom: rgba(10, 10, 15, 0.78);
+  --color-mark-border: rgba(255, 255, 255, 0.18);
+  --shadow-mark: 0 0 12px rgba(0, 245, 255, 0.55), inset 0 0 6px rgba(255, 0, 110, 0.5);
+
+  /* Botones y campos */
+  --color-btn-inner-cyan: rgba(0, 245, 255, 0.25);
+  --color-btn-inner-magenta: rgba(255, 0, 110, 0.25);
+  --shadow-btn-cyan: 0 0 14px rgba(0, 245, 255, 0.55), inset 0 0 8px rgba(0, 245, 255, 0.35);
+  --shadow-btn-magenta: 0 0 14px rgba(255, 0, 110, 0.55), inset 0 0 8px rgba(255, 0, 110, 0.35);
+  --shadow-input-focus: 0 0 12px rgba(0, 245, 255, 0.35);
+
+  /* Hero de la biblioteca */
+  --gradient-hero-title: linear-gradient(180deg, #ffffff 0%, #00f5ff 60%, #ff006e 110%);
+  --shadow-hero-title: drop-shadow(0 0 12px rgba(0, 245, 255, 0.4));
+
+  /* Tarjetas de mapa */
+  --gradient-card-shine: linear-gradient(135deg, transparent 60%, rgba(0, 245, 255, 0.4));
+  --shadow-card-hover: 0 18px 40px -10px rgba(0, 245, 255, 0.4), 0 0 0 1px rgba(0, 245, 255, 0.3);
+  --color-label-bg: rgba(0, 0, 0, 0.6);
+
+  /* Paneles de estado (zona de soltar, error de almacenamiento) */
+  --color-panel-bg: rgba(15, 15, 24, 0.7);
+  --shadow-panel-cyan: 0 0 18px rgba(0, 245, 255, 0.25), inset 0 0 18px rgba(0, 245, 255, 0.08);
+  --shadow-panel-magenta: 0 0 18px rgba(255, 0, 110, 0.25), inset 0 0 18px rgba(255, 0, 110, 0.08);
+  --drop-glow-cyan: drop-shadow(0 0 8px rgba(0, 245, 255, 0.6));
+
+  /* Diálogos y avisos */
+  --shadow-dialog: 0 0 24px rgba(0, 245, 255, 0.3), inset 0 0 12px rgba(0, 245, 255, 0.08);
+  --shadow-notice-cyan: -4px 0 12px -4px rgba(0, 245, 255, 0.6);
+  --shadow-notice-green: -4px 0 12px -4px rgba(0, 255, 136, 0.6);
+  --shadow-notice-yellow: -4px 0 12px -4px rgba(245, 255, 0, 0.6);
+  --shadow-notice-magenta: -4px 0 12px -4px rgba(255, 0, 110, 0.6);
+
+  /* Visor */
+  --shadow-viewer-bar: 0 1px 12px rgba(0, 245, 255, 0.15);
+
+  /* Glow (text-shadow / box-shadow) */
+  --glow-cyan: 0 0 6px rgba(0, 245, 255, 0.65), 0 0 16px rgba(0, 245, 255, 0.45);
+  --glow-magenta: 0 0 6px rgba(255, 0, 110, 0.65), 0 0 16px rgba(255, 0, 110, 0.45);
+  --glow-yellow: 0 0 6px rgba(245, 255, 0, 0.7), 0 0 16px rgba(245, 255, 0, 0.4);
+  --glow-green: 0 0 6px rgba(0, 255, 136, 0.6), 0 0 16px rgba(0, 255, 136, 0.35);
 
   /* Tipografía */
-  --font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-pixel: "Press Start 2P", monospace;
+  --font-mono: "JetBrains Mono", "Courier New", monospace;
   --font-size-sm: 0.8125rem;
-  --font-size-md: 0.9375rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.5rem;
+  --font-size-md: 0.875rem;
+  --font-size-lg: 1rem;
+  --font-size-xl: 1.25rem;
   --font-weight-normal: 400;
-  --font-weight-bold: 600;
+  --font-weight-bold: 700;
+
+  /* Tamaños de la fuente pixel: Press Start 2P es mucho más ancha que una fuente normal */
+  --font-size-pixel-xs: 8px;
+  --font-size-pixel-sm: 10px;
+  --font-size-pixel-md: 12px;
+  --font-size-pixel-lg: 14px;
+  --font-size-pixel-xl: clamp(28px, 6vw, 64px);
 
   /* Espacios */
   --space-1: 4px;
@@ -45,14 +124,17 @@
   --space-6: 32px;
   --space-7: 48px;
 
-  /* Radios */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* Radios: el estilo arcade es de esquinas rectas o cortadas */
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+
+  /* Forma */
+  --clip-corner: 8px;
 
   /* Sombras */
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.7);
 
   /* Layout */
   --header-height: 56px;

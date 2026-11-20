@@ -1,0 +1,27 @@
+/*
+ * Fuentes del tema arcade (SPEC 02), copiadas en vendor/fonts/ con su licencia OFL.
+ * Sin CDN: se cargan desde el disco para funcionar con file:// y sin internet.
+ */
+@font-face {
+  font-family: "Press Start 2P";
+  src: url("../vendor/fonts/press-start-2p/PressStart2P-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("../vendor/fonts/jetbrains-mono/JetBrainsMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("../vendor/fonts/jetbrains-mono/JetBrainsMono-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
