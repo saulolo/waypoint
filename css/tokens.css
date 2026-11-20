@@ -1,0 +1,62 @@
+/*
+ * Tokens de diseño de Waypoint.
+ * Tema oscuro provisional inspirado en MapGenie: cambiar el tema solo toca este archivo.
+ */
+:root {
+  /* Superficies */
+  --color-bg: #1b1d22;
+  --color-surface: #24272e;
+  --color-surface-raised: #2d3139;
+  --color-surface-hover: #353a43;
+  --color-border: #3a3f48;
+
+  /* Texto */
+  --color-text: #e8e9eb;
+  --color-text-muted: #9aa0aa;
+  --color-text-inverse: #15171b;
+
+  /* Acentos */
+  --color-accent: #f0b429;
+  --color-accent-hover: #f7c948;
+  --color-danger: #e5484d;
+  --color-danger-hover: #f16a6e;
+  --color-success: #46a758;
+  --color-warning: #f0b429;
+
+  /* Overlays */
+  --color-overlay: rgba(10, 11, 14, 0.7);
+  --color-drop-overlay: rgba(240, 180, 41, 0.12);
+
+  /* Tipografía */
+  --font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-size-sm: 0.8125rem;
+  --font-size-md: 0.9375rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.5rem;
+  --font-weight-normal: 400;
+  --font-weight-bold: 600;
+
+  /* Espacios */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Radios */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Sombras */
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  /* Layout */
+  --header-height: 56px;
+
+  /* Transiciones */
+  --transition-fast: 120ms ease;
+}
