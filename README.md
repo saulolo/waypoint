@@ -3,7 +3,7 @@
 App web local para seguir tu progreso en videojuegos sobre sus mapas grandes.
 Creas una carpeta por juego (con su portada), cargas dentro las imágenes de sus mapas, se guardan en tu navegador y las abres con zoom y arrastre.
 
-> Estado: **SPEC 03** (juegos con portada, biblioteca de mapas y visor, con tema visual arcade retro). Los marcadores marcables como hechos llegan en SPEC 04.
+> Estado: **SPEC 04** (juegos con portada, biblioteca de mapas y visor con zoom fluido, con tema visual arcade retro). Los marcadores marcables como hechos llegan en SPEC 05.
 >
 > **Aviso de la versión SPEC 03:** al actualizar desde la versión anterior, los mapas que ya tenías guardados se **borran** (ahora todo mapa pertenece a un juego). Si quieres conservar alguno, vuelve a cargarlo dentro de un juego.
 
@@ -50,8 +50,12 @@ Al abrir un juego ves su cabecera (**← Juegos**, portada, nombre y número de 
 ### Visor
 
 - Clic en una tarjeta para abrir el mapa a pantalla completa, ajustado a la ventana.
-- **Rueda del ratón**: zoom, desde "mapa entero visible" hasta 4× el tamaño real. También con los botones **+** / **−**.
-- **Arrastrar**: mueve el mapa. No se puede sacar de la vista.
+- **Rueda del ratón**: zoom continuo hacia el punto bajo el cursor. Cada clic de rueda acerca o aleja un poco (hacen falta 3 clics para doblar el tamaño).
+- **Touchpad**: deslizar con dos dedos o pellizcar hace zoom del mapa (no de la página).
+- **Botones + / −** y **doble clic**: un paso de zoom (el doble o la mitad).
+- **Rango de zoom**: desde 1/4 de "mapa entero visible" hasta 4× el tamaño real.
+- **Arrastrar**: mueve el mapa. Puede salir de la ventana por cualquier borde, pero siempre queda un trozo visible (100 px) para no perderlo.
+- Con **reducir movimiento** activado, la rueda salta al zoom final sin animar.
 - **← Mapas** (vuelve al juego del mapa) o el botón atrás del navegador para volver.
 - La dirección (`#/map/<id>`) es estable: recargar (F5) reabre el mismo mapa.
 
@@ -89,7 +93,7 @@ La documentación técnica está en [`CLAUDE.md`](CLAUDE.md) y las especificacio
 
 ## Próximamente
 
-- **SPEC 04**: marcadores sobre el mapa, marcables como hechos.
+- **SPEC 05**: marcadores sobre el mapa, marcables como hechos.
 - Ideas para después: categorías con color, rutas, exportar/importar copias de seguridad, tiles para imágenes gigantes.
 
 ## Créditos
