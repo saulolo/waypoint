@@ -3,7 +3,7 @@
 App web local para seguir tu progreso en videojuegos sobre sus mapas grandes.
 Creas una carpeta por juego (con su portada), cargas dentro las imágenes de sus mapas, se guardan en tu navegador y las abres con zoom y arrastre.
 
-> Estado: **SPEC 05** (juegos con portada, biblioteca de mapas y visor con zoom fluido y panel lateral plegable, con tema visual arcade retro). Los marcadores marcables como hechos llegan en SPEC 06.
+> Estado: **SPEC 06** (juegos con portada, biblioteca de mapas y visor con zoom fluido, panel lateral plegable y controles de vista, con tema visual arcade retro). Los marcadores marcables como hechos llegan en SPEC 07.
 >
 > **Aviso de la versión SPEC 03:** al actualizar desde la versión anterior, los mapas que ya tenías guardados se **borran** (ahora todo mapa pertenece a un juego). Si quieres conservar alguno, vuelve a cargarlo dentro de un juego.
 
@@ -58,8 +58,12 @@ Al abrir un juego ves su cabecera (**← Juegos**, portada, nombre y número de 
 - **Touchpad**: deslizar con dos dedos o pellizcar hace zoom del mapa (no de la página).
 - **Botones + / −** y **doble clic**: un paso de zoom (el doble o la mitad).
 - **Rango de zoom**: desde 1/4 de "mapa entero visible" hasta 4× el tamaño real.
+- **Botones de vista** (abajo a la derecha, encima de + / −, cada uno en su propia caja):
+  - **Pin con +**: reservado para añadir pines; todavía no hace nada (llega con los marcadores, SPEC 07).
+  - **Pantalla completa**: la app ocupa todo el monitor, sin la interfaz del navegador. En ella solo se ven el mapa y los botones: el panel lateral se oculta y vuelve como estaba al salir. Se sale con el mismo botón o con **Esc**. Salir del mapa también sale de pantalla completa.
+  - **1:1 / ajustar**: un solo botón. Muestra **1:1** y pone el mapa a tamaño real, manteniendo el punto que estaba en el centro. Con el mapa a tamaño real cambia a un recuadro, y al pulsarlo deja el mapa entero visible y centrado. Si haces zoom con la rueda, vuelve a mostrar **1:1**.
 - **Arrastrar**: mueve el mapa. Puede salir de la ventana por cualquier borde, pero siempre queda un trozo visible (100 px) para no perderlo.
-- Con **reducir movimiento** activado, la rueda salta al zoom final sin animar.
+- Con **reducir movimiento** activado, la rueda, 1:1 y ajustar saltan a la vista final sin animar.
 - **← Mapas** (vuelve al juego del mapa) o el botón atrás del navegador para volver.
 - La dirección (`#/map/<id>`) es estable: recargar (F5) reabre el mismo mapa.
 
@@ -97,7 +101,7 @@ La documentación técnica está en [`CLAUDE.md`](CLAUDE.md) y las especificacio
 
 ## Próximamente
 
-- **SPEC 06**: marcadores sobre el mapa, marcables como hechos.
+- **SPEC 07**: marcadores sobre el mapa, marcables como hechos.
 - Ideas para después: categorías con color, rutas, exportar/importar copias de seguridad, tiles para imágenes gigantes.
 
 ## Créditos

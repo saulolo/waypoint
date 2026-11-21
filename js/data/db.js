@@ -27,7 +27,7 @@
       // Imagen original pesada. Solo se lee al abrir el visor.
       db.createObjectStore(STORES.images, { keyPath: "mapId" });
 
-      // Vacío en SPEC 01; SPEC 06 define el resto de campos.
+      // Vacío en SPEC 01; SPEC 07 define el resto de campos.
       var markers = db.createObjectStore(STORES.markers, { keyPath: "id" });
       markers.createIndex("mapId", "mapId", { unique: false });
     },

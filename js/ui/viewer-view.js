@@ -16,8 +16,10 @@
  *   - Límites de arrastre (maxBounds con viscosidad 1, recalculados tras cada zoom y al
  *     redimensionar): la imagen puede salir de la vista por cualquier borde, pero en cada eje
  *     quedan siempre al menos MIN_VISIBLE_PX de ella dentro, para no perderla de vista.
- * Al salir se quita el handler de rueda, se destruye el mapa Leaflet y se revocan los object URLs
- * de la imagen y de la portada.
+ *   - Pantalla completa (botón de view-controls): Fullscreen API sobre <html>; en ella solo se ve el
+ *     mapa y los controles (.viewer--fullscreen oculta el panel y su pestaña).
+ * Al salir se quitan el handler de rueda y el de fullscreenchange, se sale de pantalla completa,
+ * se destruye el mapa Leaflet y se revocan los object URLs de la imagen y de la portada.
  *
  * Nunca accede a IndexedDB: todo pasa por Waypoint.services.mapService y gameService.
  */
@@ -29,6 +31,7 @@
   var notice = Waypoint.ui.notice;
   var router = Waypoint.core.router;
   var wheelZoom = Waypoint.ui.wheelZoom;
+  var viewControls = Waypoint.ui.viewControls;
 
   var MAX_ZOOM = 2; // 2^2 = 4× el tamaño real
   var MIN_ZOOM_BELOW_FIT = 2; // zoom mínimo = fitZoom − 2 → 1/4 del tamaño de ajuste
@@ -36,7 +39,14 @@
   // getBoundsZoom limita su resultado al minZoom vigente; para medir el ajuste real
   // (negativo en imágenes más grandes que la ventana) se abre el límite antes de calcular.
   var UNBOUNDED_MIN_ZOOM = -20;
+  var ACTUAL_SIZE_ZOOM = 0; // CRS.Simple con la imagen en [0,0]–[height,width]: zoom 0 = 1:1
+  var ACTUAL_SIZE_EPSILON = 0.01; // tolerancia para dar por "tamaño real" un zoom casi 0
   var APP_TITLE = "Waypoint";
+
+  // Leaflet no mira prefers-reduced-motion: las animaciones propias del visor lo consultan aquí.
+  function prefersReducedMotion() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
 
   function el(tag, className, text) {
     var node = document.createElement(tag);
@@ -61,6 +71,7 @@
     var imageUrl = null;
     var coverUrl = null;
     var detachWheel = null;
+    var controls = null; // L.Control de vista (pantalla completa, ajustar, 1:1)
 
     var root = el("section", "viewer");
     root.setAttribute("aria-label", "Visor de mapa");
@@ -137,6 +148,37 @@
       );
     }
 
+    // Pantalla completa del navegador sobre <html>, no sobre .viewer: los avisos y diálogos cuelgan
+    // de <body> y no se verían. Se pide directamente en el clic (la API exige un gesto del usuario).
+    function toggleFullscreen() {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(function (error) {
+          console.error("[viewer] No se pudo salir de la pantalla completa:", error);
+        });
+        return;
+      }
+      var request;
+      try {
+        request = document.documentElement.requestFullscreen();
+      } catch (error) {
+        request = Promise.reject(error);
+      }
+      request.catch(function () {
+        notice.show("No se pudo activar la pantalla completa.", { type: "error" });
+      });
+    }
+
+    // El estado visual sale del evento, no del clic: así Esc y el botón dejan la UI igual.
+    // El panel conserva su estado (panelExpanded): solo se oculta mientras dure la pantalla completa.
+    function onFullscreenChange() {
+      var active = document.fullscreenElement === document.documentElement;
+      root.classList.toggle("viewer--fullscreen", active);
+      if (controls) {
+        controls.setFullscreen(active);
+      }
+    }
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+
     function createLeafletMap(map, url) {
       var bounds = L.latLngBounds([0, 0], [map.height, map.width]);
 
@@ -163,6 +205,30 @@
       };
 
       L.control.zoom({ position: "bottomright", zoomInTitle: "Acercar", zoomOutTitle: "Alejar" }).addTo(leafletMap);
+
+      // Después del zoom: en las esquinas de abajo Leaflet apila el último añadido arriba.
+      //
+      controls = viewControls
+        .create({
+          onToggleFullscreen: toggleFullscreen,
+          onFit: function () {
+            // Vista inicial: mapa entero visible y centrado, con el ajuste para la ventana de ahora.
+            leafletMap.setView(bounds.getCenter(), fitZoom(bounds), { animate: !prefersReducedMotion() });
+          },
+          onActualSize: function () {
+            // 1 px de imagen = 1 px de pantalla, sobre el punto que está en el centro de la vista.
+            // Si el 0 queda fuera del rango, se usa el valor más cercano dentro de él.
+            var zoom = Math.max(leafletMap.getMinZoom(), Math.min(MAX_ZOOM, ACTUAL_SIZE_ZOOM));
+            leafletMap.setView(leafletMap.getCenter(), zoom, { animate: !prefersReducedMotion() });
+          },
+        });
+      controls.addTo(leafletMap);
+
+      // El botón de escala cambia según el zoom: a tamaño real ofrece ajustar; si no, 1:1.
+      function syncScaleButton() {
+        controls.setActualSize(Math.abs(leafletMap.getZoom() - ACTUAL_SIZE_ZOOM) < ACTUAL_SIZE_EPSILON);
+      }
+      leafletMap.on("zoomend", syncScaleButton);
 
       var overlay = L.imageOverlay(url, bounds, { alt: map.name }).addTo(leafletMap);
       overlay.on("error", function () {
@@ -262,6 +328,10 @@
 
     return function unmount() {
       alive = false;
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(function () {});
+      }
       if (detachWheel) {
         detachWheel();
         detachWheel = null;
