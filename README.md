@@ -3,7 +3,7 @@
 App web local para seguir tu progreso en videojuegos sobre sus mapas grandes.
 Creas una carpeta por juego (con su portada), cargas dentro las imágenes de sus mapas, se guardan en tu navegador y las abres con zoom y arrastre.
 
-> Estado: **SPEC 04** (juegos con portada, biblioteca de mapas y visor con zoom fluido, con tema visual arcade retro). Los marcadores marcables como hechos llegan en SPEC 05.
+> Estado: **SPEC 05** (juegos con portada, biblioteca de mapas y visor con zoom fluido y panel lateral plegable, con tema visual arcade retro). Los marcadores marcables como hechos llegan en SPEC 06.
 >
 > **Aviso de la versión SPEC 03:** al actualizar desde la versión anterior, los mapas que ya tenías guardados se **borran** (ahora todo mapa pertenece a un juego). Si quieres conservar alguno, vuelve a cargarlo dentro de un juego.
 
@@ -50,6 +50,10 @@ Al abrir un juego ves su cabecera (**← Juegos**, portada, nombre y número de 
 ### Visor
 
 - Clic en una tarjeta para abrir el mapa a pantalla completa, ajustado a la ventana.
+- **Panel lateral**: arriba a la izquierda, encima del mapa, con **← Mapas**, la portada y el nombre del juego y el nombre del mapa. Ocupa media ventana de alto y tapa esa parte del mapa.
+  - La pestaña **◀** pegada a su borde lo pliega hacia la izquierda y deja el mapa entero a la vista; **▶** lo vuelve a abrir. Plegarlo no mueve ni cambia el zoom del mapa.
+  - Siempre se abre desplegado al entrar en un mapa.
+  - La rueda y el arrastre sobre el panel no mueven el mapa.
 - **Rueda del ratón**: zoom continuo hacia el punto bajo el cursor. Cada clic de rueda acerca o aleja un poco (hacen falta 3 clics para doblar el tamaño).
 - **Touchpad**: deslizar con dos dedos o pellizcar hace zoom del mapa (no de la página).
 - **Botones + / −** y **doble clic**: un paso de zoom (el doble o la mitad).
@@ -93,7 +97,7 @@ La documentación técnica está en [`CLAUDE.md`](CLAUDE.md) y las especificacio
 
 ## Próximamente
 
-- **SPEC 05**: marcadores sobre el mapa, marcables como hechos.
+- **SPEC 06**: marcadores sobre el mapa, marcables como hechos.
 - Ideas para después: categorías con color, rutas, exportar/importar copias de seguridad, tiles para imágenes gigantes.
 
 ## Créditos

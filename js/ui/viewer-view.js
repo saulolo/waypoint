@@ -1,6 +1,12 @@
 /*
  * Visor de mapas a pantalla completa con Leaflet (CRS.Simple).
  *
+ * El mapa ocupa toda la ventana. Encima, a la izquierda, un panel lateral (.viewer__panel) con
+ * "← Mapas", la portada y el nombre del juego (si se pudo leer) y el nombre del mapa. Es hermano
+ * del escenario, no hijo del contenedor de Leaflet: superponerlo no redimensiona el mapa.
+ * La pestaña .viewer__toggle lo pliega y despliega (siempre empieza expandido; no se guarda).
+ * Contraído, el panel sale por la izquierda y queda inert; la pestaña, fuera de él, queda en el borde.
+ *
  * La imagen ocupa los bounds [[0, 0], [height, width]]: 1 unidad = 1 px de la imagen a zoom 0.
  *   - Zoom mínimo: el de "mapa entero visible" − 2, 1/4 de ese tamaño (se recalcula al cambiar el tamaño de la ventana).
  *   - Vista inicial: "mapa entero visible", centrado.
@@ -10,14 +16,16 @@
  *   - Límites de arrastre (maxBounds con viscosidad 1, recalculados tras cada zoom y al
  *     redimensionar): la imagen puede salir de la vista por cualquier borde, pero en cada eje
  *     quedan siempre al menos MIN_VISIBLE_PX de ella dentro, para no perderla de vista.
- * Al salir se quita el handler de rueda, se destruye el mapa Leaflet y se revoca el object URL.
+ * Al salir se quita el handler de rueda, se destruye el mapa Leaflet y se revocan los object URLs
+ * de la imagen y de la portada.
  *
- * Nunca accede a IndexedDB: todo pasa por Waypoint.services.mapService.
+ * Nunca accede a IndexedDB: todo pasa por Waypoint.services.mapService y gameService.
  */
 (function (Waypoint) {
   "use strict";
 
   var mapService = Waypoint.services.mapService;
+  var gameService = Waypoint.services.gameService;
   var notice = Waypoint.ui.notice;
   var router = Waypoint.core.router;
   var wheelZoom = Waypoint.ui.wheelZoom;
@@ -51,24 +59,53 @@
     var alive = true;
     var leafletMap = null;
     var imageUrl = null;
+    var coverUrl = null;
     var detachWheel = null;
 
     var root = el("section", "viewer");
     root.setAttribute("aria-label", "Visor de mapa");
 
-    var bar = el("header", "viewer__bar");
-    var back = el("a", "btn btn--ghost viewer__back", "← Mapas");
-    back.href = "#/";
-    var title = el("h1", "viewer__title", "Cargando…");
-    bar.appendChild(back);
-    bar.appendChild(title);
-
+    // Escenario a pantalla completa; el panel y la pestaña van encima, como hermanos, fuera del
+    // contenedor de Leaflet. Así la rueda (wheel-zoom.js) y el arrastre (mousedown de Leaflet),
+    // que escuchan en ese contenedor, no reciben los eventos que empiezan sobre el panel.
     var stage = el("div", "viewer__stage");
     var status = el("p", "viewer__status", "Cargando mapa…");
     stage.appendChild(status);
 
-    root.appendChild(bar);
+    var panel = el("aside", "viewer__panel");
+    panel.id = "viewer-panel";
+    panel.setAttribute("aria-label", "Panel del mapa");
+    var back = el("a", "btn btn--ghost viewer__back", "← Mapas");
+    back.href = "#/";
+    var title = el("h1", "viewer__title", "Cargando…");
+    panel.appendChild(back);
+    panel.appendChild(title);
+
+    // Pestaña de plegado: fuera del panel, para que siga activa cuando el panel queda inert.
+    var toggle = el("button", "viewer__toggle");
+    toggle.type = "button";
+    toggle.setAttribute("aria-controls", panel.id);
+
+    // Siempre expandido al montar; el estado no se guarda.
+    var panelExpanded = true;
+
+    function renderPanelState() {
+      root.classList.toggle("viewer--panel-collapsed", !panelExpanded);
+      panel.inert = !panelExpanded;
+      toggle.setAttribute("aria-expanded", String(panelExpanded));
+      toggle.setAttribute("aria-label", panelExpanded ? "Contraer panel" : "Expandir panel");
+      toggle.textContent = panelExpanded ? "◀" : "▶";
+    }
+
+    toggle.addEventListener("click", function () {
+      panelExpanded = !panelExpanded;
+      renderPanelState();
+    });
+    renderPanelState();
+
     root.appendChild(stage);
+    root.appendChild(panel);
+    root.appendChild(toggle);
     container.appendChild(root);
     document.body.classList.add("is-viewer");
 
@@ -156,6 +193,28 @@
       });
     }
 
+    // Portada pequeña (o la inicial) y nombre del juego, entre "← Mapas" y el nombre del mapa.
+    // Solo informativo: no es enlace.
+    function showGame(game) {
+      var block = el("div", "viewer__game");
+      var cover = el("div", "viewer__game-cover");
+      if (game.cover) {
+        coverUrl = URL.createObjectURL(game.cover);
+        var img = el("img", "viewer__game-img");
+        img.src = coverUrl;
+        img.alt = "";
+        cover.appendChild(img);
+      } else {
+        var placeholder = el("div", "game-placeholder", Array.from(game.name)[0].toUpperCase());
+        placeholder.setAttribute("aria-hidden", "true");
+        cover.appendChild(placeholder);
+      }
+      var name = el("p", "viewer__game-name", game.name);
+      block.appendChild(cover);
+      block.appendChild(name);
+      panel.insertBefore(block, title);
+    }
+
     function showMap(result) {
       var map = result.map;
       title.textContent = map.name;
@@ -175,6 +234,17 @@
           return;
         }
         showMap(result);
+        // El juego llega aparte: si falla, el panel queda sin su bloque y el mapa sigue abierto.
+        gameService
+          .get(result.map.gameId)
+          .then(function (game) {
+            if (alive) {
+              showGame(game);
+            }
+          })
+          .catch(function (error) {
+            console.error("[viewer] No se pudo leer el juego del mapa:", error);
+          });
       })
       .catch(function (error) {
         if (!alive) {
@@ -203,6 +273,10 @@
       if (imageUrl) {
         URL.revokeObjectURL(imageUrl);
         imageUrl = null;
+      }
+      if (coverUrl) {
+        URL.revokeObjectURL(coverUrl);
+        coverUrl = null;
       }
       document.body.classList.remove("is-viewer");
       document.title = APP_TITLE;

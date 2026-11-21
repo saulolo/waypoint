@@ -16,7 +16,7 @@ Arcade Vault es Next.js + Tailwind con fuentes de Google vía `next/font`.
 Waypoint no puede usar nada de eso: se porta solo el CSS, a mano, respetando `file://`, scripts clásicos y cero red.
 El tema nuevo no cabe solo en los tokens: añade fuentes, capas de fondo, efectos y un hero.
 
-Esta spec toma el número 02. Los marcadores pasan a SPEC 05.
+Esta spec toma el número 02. Los marcadores pasan a SPEC 06.
 
 ## Alcance
 
@@ -49,7 +49,7 @@ Esta spec toma el número 02. Los marcadores pasan a SPEC 05.
 - Siluetas temáticas de mapas (pin, cofre, brújula).
 - Sonidos.
 - Tema claro o selector de temas.
-- Estilo de los marcadores (llega con SPEC 05).
+- Estilo de los marcadores (llega con SPEC 06).
 - Arreglar los acentos que Press Start 2P no dibuja.
 
 ## Modelo de datos
@@ -173,7 +173,7 @@ Modificados:
 - **Sí:** acento rotativo en las tarjetas. Es el rasgo más visible de la biblioteca de Arcade Vault.
 - **Sí:** respetar `prefers-reduced-motion`. Arcade Vault no lo hace; Waypoint ya lo hacía en `dialog.css`.
 - **No:** interruptor de efectos en la app. Necesita persistencia y UI; va en otra spec si hace falta.
-- **Sí:** esta spec es la 02 y los marcadores pasan a SPEC 05. Numeración secuencial sin huecos.
+- **Sí:** esta spec es la 02 y los marcadores pasan a SPEC 06. Numeración secuencial sin huecos.
 
 ## Riesgos
 
@@ -195,7 +195,7 @@ Modificados:
 - Siluetas temáticas de mapas.
 - Sonidos.
 - Tema claro o selector de temas.
-- Estilo de marcadores (SPEC 05).
+- Estilo de marcadores (SPEC 06).
 - Arreglo de los acentos de Press Start 2P.
 
 Cada una de estas, si llega, va en su propia spec.
