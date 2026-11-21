@@ -1,6 +1,6 @@
 /* ---------- Visor a pantalla completa ---------- */
 
-/* En el visor la cabecera global se oculta: el visor tiene su propia barra. */
+/* En el visor la cabecera global se oculta: el visor tiene su propio panel lateral. */
 body.is-viewer .app-header {
   display: none;
 }
@@ -12,21 +12,95 @@ body.is-viewer {
 .viewer {
   position: fixed;
   inset: 0;
-  display: flex;
-  flex-direction: column;
   background: var(--color-bg);
 }
 
-.viewer__bar {
+/*
+ * Escenario opaco a pantalla completa: tapa las capas de fondo; la imagen del mapa se ve limpia.
+ * isolation encierra los z-index de los panes de Leaflet, para que el panel quede siempre encima.
+ */
+.viewer__stage {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  background: var(--color-bg);
+}
+
+/* ---------- Panel lateral (superpuesto al mapa) ---------- */
+
+/* Alto fijo de media ventana, tenga o no contenido; si no cabe, scroll interno. */
+.viewer__panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
   display: flex;
-  flex: none;
-  align-items: center;
-  gap: var(--space-3);
-  height: var(--header-height);
-  padding: 0 var(--space-4);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  box-sizing: border-box;
+  width: var(--viewer-panel-width);
+  height: 50%;
+  padding: var(--space-4);
+  overflow-y: auto;
+  border-right: 1px solid var(--color-line);
   border-bottom: 1px solid var(--color-line);
-  background: linear-gradient(180deg, var(--color-bg-2), var(--color-bg));
-  box-shadow: var(--shadow-viewer-bar);
+  background: linear-gradient(90deg, var(--color-bg-2), var(--color-bg));
+  box-shadow: var(--shadow-viewer-panel);
+  transition: transform 200ms ease;
+}
+
+/* Pestaña pegada al borde derecho del panel, arriba. Se desplaza con él. */
+.viewer__toggle {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--viewer-panel-width);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--color-line);
+  border-left: none;
+  border-radius: 0;
+  background: var(--color-bg-2);
+  color: var(--color-neon-cyan);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-md);
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow-viewer-panel);
+  transition: transform 200ms ease, box-shadow var(--transition-fast);
+}
+
+.viewer__toggle:hover,
+.viewer__toggle:focus-visible {
+  box-shadow: var(--shadow-btn-cyan);
+  text-shadow: var(--glow-cyan);
+}
+
+.viewer__toggle:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: -2px;
+}
+
+/* Contraído: el panel sale entero por la izquierda; la pestaña queda en el borde de la ventana. */
+.viewer--panel-collapsed .viewer__panel {
+  transform: translateX(-100%);
+}
+
+.viewer--panel-collapsed .viewer__toggle {
+  transform: translateX(calc(-1 * var(--viewer-panel-width)));
+}
+
+/* La regla global de effects.css solo anula animation: la transición se anula aquí. */
+@media (prefers-reduced-motion: reduce) {
+  .viewer__panel,
+  .viewer__toggle {
+    transition: none;
+  }
 }
 
 .viewer__back {
@@ -34,27 +108,53 @@ body.is-viewer {
   text-decoration: none;
 }
 
-/* Nombre en pixel; los largos se cortan con puntos suspensivos */
-.viewer__title {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--color-text);
-  font-family: var(--font-pixel);
-  font-size: var(--font-size-pixel-md);
-  font-weight: var(--font-weight-normal);
-  letter-spacing: 0.08em;
-  line-height: 1.25;
-  text-transform: uppercase;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+/* Bloque del juego: portada pequeña 3:4 (o la inicial) y nombre en pixel */
+.viewer__game {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 100%;
 }
 
-/* Escenario opaco: tapa las capas de fondo; la imagen del mapa se ve limpia, sin efectos. */
-.viewer__stage {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  background: var(--color-bg);
+.viewer__game-cover {
+  flex: none;
+  width: 42px;
+  aspect-ratio: 3 / 4;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+}
+
+.viewer__game-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.viewer__game-name {
+  min-width: 0;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-md);
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+/* Nombre en pixel; los largos parten en varias líneas */
+.viewer__title {
+  max-width: 100%;
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-sm);
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
 .viewer__status {

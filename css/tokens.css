@@ -90,7 +90,7 @@
   --shadow-notice-magenta: -4px 0 12px -4px rgba(255, 0, 110, 0.6);
 
   /* Visor */
-  --shadow-viewer-bar: 0 1px 12px rgba(0, 245, 255, 0.15);
+  --shadow-viewer-panel: 1px 0 12px rgba(0, 245, 255, 0.15);
 
   /* Glow (text-shadow / box-shadow) */
   --glow-cyan: 0 0 6px rgba(0, 245, 255, 0.65), 0 0 16px rgba(0, 245, 255, 0.45);
@@ -138,6 +138,7 @@
 
   /* Layout */
   --header-height: 56px;
+  --viewer-panel-width: 320px;
 
   /* Transiciones */
   --transition-fast: 120ms ease;

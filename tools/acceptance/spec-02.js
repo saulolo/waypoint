@@ -222,7 +222,7 @@
   window.location.hash = c0.querySelector(".map-card__link").getAttribute("href");
   await waitFor(() => !!$(".leaflet-image-layer")); await sleep(600);
 
-  // 14b. Nombre en la barra del visor
+  // 14b. Nombre en el panel del visor
   const viewerTitle = $(".viewer__title");
   ok(
     "14_map_name_pixel",
