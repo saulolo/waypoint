@@ -155,20 +155,22 @@
     ...Array.from({ length: 10 }, (_, i) => ["Input.dispatchMouseEvent", { type: "mouseMoved", x: cx + (dx * (i + 1)) / 10, y: cy + (dy * (i + 1)) / 10, button: "left", buttons: 1 }]),
     ["Input.dispatchMouseEvent", { type: "mouseReleased", x: cx + dx, y: cy + dy, button: "left", clickCount: 1 }],
   ];
-  await input([wheel(500)]);
-  const minHeld = Math.abs(ir().width - fit.width) < 1;
-  await input([wheel(-300)], 800);
+  // Desde SPEC 04 el mínimo es 1/4 del ancho de ajuste (fitZoom − 2).
+  await input([wheel(1000)]);
+  const minHeld = Math.abs(ir().width - fit.width / 4) < fit.width * 0.01;
+  await input([wheel(-900)], 800);
   const zoomedIn = ir().width > fit.width + 10;
   const b = ir(); await input(drag(-200, -120), 800); const a = ir();
   const dragged = Math.abs(a.left - b.left) > 20 || Math.abs(a.top - b.top) > 20;
   ok("15_wheel_zoom_and_drag", zoomedIn && dragged);
+  // Desde SPEC 04 la imagen puede salir de la vista, pero quedan siempre 100 px de ella dentro por eje.
+  const visible = (r) => [Math.min(r.right, stage.right) - Math.max(r.left, stage.left), Math.min(r.bottom, stage.bottom) - Math.max(r.top, stage.top)];
+  const keeps100 = (r) => visible(r).every((v) => Math.abs(v - 100) <= 1);
   await input(drag(4000, 4000), 1000);
   const f1 = ir();
-  const coverTL = f1.left <= stage.left + 1 && f1.top <= stage.top + 1 && f1.right >= stage.right - 1 && f1.bottom >= stage.bottom - 1;
   await input(drag(-4000, -4000), 1000);
   const f2 = ir();
-  const coverBR = f2.left <= stage.left + 1 && f2.top <= stage.top + 1 && f2.right >= stage.right - 1 && f2.bottom >= stage.bottom - 1;
-  ok("17_cannot_drag_out", coverTL && coverBR);
+  ok("17_cannot_lose_image", keeps100(f1) && keeps100(f2), { visibleTL: visible(f1).map(Math.round), visibleBR: visible(f2).map(Math.round) });
   for (let i = 0; i < 14; i++) await input([wheel(-600)], 220);
   await sleep(700);
   const maxScale = ir().width / 3000;
