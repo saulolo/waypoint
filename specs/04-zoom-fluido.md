@@ -14,7 +14,7 @@ El zoom mínimo es justo el de "mapa entero visible", así que no se puede ver e
 La fluidez no se consigue solo con opciones de Leaflet.
 Por eso el zoom de rueda pasa a un handler propio que interpola el zoom en cada fotograma.
 
-Esta spec toma el número 04. Los marcadores pasan a SPEC 06, como ya hicieron SPEC 02 y SPEC 03.
+Esta spec toma el número 04. Los marcadores pasan a SPEC 07, como ya hicieron SPEC 02 y SPEC 03.
 
 ## Alcance
 
@@ -32,7 +32,7 @@ Esta spec toma el número 04. Los marcadores pasan a SPEC 06, como ya hicieron S
 - Botones + / − y doble clic: paso de 1 nivel (hoy 0,5), con la animación de Leaflet. Respetan el nuevo mínimo.
 - `prefers-reduced-motion: reduce`: el zoom de rueda salta al destino sin interpolar.
 - Al abrir un mapa, la vista inicial sigue siendo "mapa entero visible" y centrado.
-- Renumerar a SPEC 06 las menciones a "SPEC 04" como marcadores.
+- Renumerar a SPEC 07 las menciones a "SPEC 04" como marcadores.
 - Adaptar `tools/acceptance/spec-01.js` al nuevo mínimo y crear `tools/acceptance/spec-04.js`.
 
 **Fuera de alcance (para specs futuras):**
@@ -44,7 +44,7 @@ Esta spec toma el número 04. Los marcadores pasan a SPEC 06, como ya hicieron S
 - Botón "ajustar a la ventana" o indicador de nivel de zoom.
 - Recordar el zoom y la posición de cada mapa al volver a abrirlo.
 - Cambiar los botones + / − o el doble clic bajo `prefers-reduced-motion`.
-- Marcadores (SPEC 06).
+- Marcadores (SPEC 07).
 
 ## Modelo de datos
 
@@ -92,13 +92,13 @@ Modificados:
 - `js/ui/viewer-view.js`: `scrollWheelZoom: false`, `zoomDelta: 1`, sin `wheelPxPerZoomLevel`; mínimo `fitZoom − 2`; límites de arrastre por eje recalculados tras cada zoom y al redimensionar; llama a `wheelZoom.attach` y a `detach()` al desmontar. Comentario de cabecera actualizado.
 - `index.html`: carga `js/ui/wheel-zoom.js` antes de `viewer-view.js`.
 - `tools/acceptance/spec-01.js`: el criterio 16 comprueba el nuevo mínimo (1/4 del ajuste) en vez de "no baja del ajuste".
-- `README.md`: rueda, touchpad y nuevo rango de zoom; marcadores en SPEC 06.
+- `README.md`: rueda, touchpad y nuevo rango de zoom; marcadores en SPEC 07.
 - `CLAUDE.md`: el zoom de rueda es propio (`wheel-zoom.js`), no de Leaflet.
-- `specs/01-biblioteca-de-mapas.md`, `specs/02-tema-arcade-retro.md`, `specs/03-carpetas-de-juegos.md`, `js/data/db.js`: renumeración de marcadores a SPEC 06.
+- `specs/01-biblioteca-de-mapas.md`, `specs/02-tema-arcade-retro.md`, `specs/03-carpetas-de-juegos.md`, `js/data/db.js`: renumeración de marcadores a SPEC 07.
 
 ## Plan de implementación
 
-1. Renumerar: los marcadores pasan de SPEC 04 a SPEC 06 en `README.md`, `specs/01-*`, `specs/02-*`, `specs/03-*` y el comentario de `js/data/db.js`. Prueba manual: `grep "SPEC 04"` solo encuentra esta spec.
+1. Renumerar: los marcadores pasan de SPEC 04 a SPEC 07 en `README.md`, `specs/01-*`, `specs/02-*`, `specs/03-*` y el comentario de `js/data/db.js`. Prueba manual: `grep "SPEC 04"` solo encuentra esta spec.
 2. Zoom mínimo y botones en `viewer-view.js`: mínimo `fitZoom − MIN_ZOOM_BELOW_FIT` (también en `resize`), `zoomDelta: 1`. Vista inicial en `fitZoom`. Prueba manual: con − se aleja dos pasos por debajo del ajuste y no más; con + llega a 4×.
 3. Límites de arrastre por eje en `viewer-view.js`: sustituir `maxBounds` fijo por `updateMaxBounds()`, que amplía los bounds de la imagen para que siempre queden `MIN_VISIBLE_PX` de ella dentro. Se llama en `zoomend` y en `resize`. Prueba manual: a cualquier zoom, el mapa se arrastra fuera de la ventana y siempre queda un trozo visible.
 4. `js/ui/wheel-zoom.js` con rueda de ratón: `wheel` con `passive: false` y `preventDefault`, zoom destino acumulado y limitado, bucle `requestAnimationFrame` con interpolación exponencial anclada al cursor, límites de arrastre aplicados en cada fotograma. Conectarlo en `viewer-view.js` con `scrollWheelZoom: false` y `detach()` al desmontar. Cargarlo en `index.html`. Prueba manual: la rueda acerca y aleja sin saltos y el punto bajo el cursor no se mueve.
@@ -150,7 +150,7 @@ Modificados:
 - **Sí:** touchpad y pellizco con el mismo cálculo por `deltaY`. Rueda y touchpad comparten código. Decisión del usuario.
 - **Sí:** zoom de rueda instantáneo con `prefers-reduced-motion: reduce`. Coherente con la regla global de `css/effects.css`. Decisión del usuario.
 - **Sí:** zoom máximo sin cambios (2, 4× el tamaño real). No se pidió.
-- **Sí:** esta spec es la 04 y los marcadores pasan a SPEC 06. Numeración secuencial sin huecos, como en SPEC 02 y 03. Decisión del usuario.
+- **Sí:** esta spec es la 04 y los marcadores pasan a SPEC 07. Numeración secuencial sin huecos, como en SPEC 02 y 03. Decisión del usuario.
 
 ## Riesgos
 
@@ -170,6 +170,6 @@ Modificados:
 - Inercia al arrastrar y zoom táctil.
 - Botón de ajustar, indicador de zoom o recordar la vista de cada mapa.
 - Cambios en botones o doble clic bajo movimiento reducido.
-- Marcadores (SPEC 06).
+- Marcadores (SPEC 07).
 
 Cada una de estas, si llega, va en su propia spec.

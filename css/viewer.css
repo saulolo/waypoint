@@ -95,6 +95,13 @@ body.is-viewer {
   transform: translateX(calc(-1 * var(--viewer-panel-width)));
 }
 
+/* Pantalla completa del navegador: solo el mapa y los controles. El panel conserva su estado
+   (expandido o contraído) y vuelve tal cual al salir. */
+.viewer--fullscreen .viewer__panel,
+.viewer--fullscreen .viewer__toggle {
+  display: none;
+}
+
 /* La regla global de effects.css solo anula animation: la transición se anula aquí. */
 @media (prefers-reduced-motion: reduce) {
   .viewer__panel,
@@ -179,7 +186,8 @@ body.is-viewer {
   box-shadow: var(--shadow-md);
 }
 
-.viewer .leaflet-bar a {
+.viewer .leaflet-bar a,
+.viewer .view-controls__btn {
   width: 36px;
   height: 36px;
   border-bottom-color: var(--color-line);
@@ -193,19 +201,23 @@ body.is-viewer {
 }
 
 /* Leaflet pone fondo claro en :hover y :focus; aquí se mantiene el oscuro. */
-.viewer .leaflet-bar a:focus {
+.viewer .leaflet-bar a:focus,
+.viewer .view-controls__btn:focus {
   background: var(--color-bg-2);
 }
 
 .viewer .leaflet-bar a:hover,
-.viewer .leaflet-bar a:focus-visible {
+.viewer .leaflet-bar a:focus-visible,
+.viewer .view-controls__btn:hover,
+.viewer .view-controls__btn:focus-visible {
   background: var(--color-bg-2);
   color: var(--color-neon-cyan);
   box-shadow: var(--shadow-btn-cyan);
   text-shadow: var(--glow-cyan);
 }
 
-.viewer .leaflet-bar a:focus-visible {
+.viewer .leaflet-bar a:focus-visible,
+.viewer .view-controls__btn:focus-visible {
   outline: 2px solid var(--color-neon-cyan);
   outline-offset: -2px;
 }
@@ -215,4 +227,38 @@ body.is-viewer {
   color: var(--color-text-faint);
   box-shadow: none;
   text-shadow: none;
+}
+
+/* ---------- Bloque de controles de vista (SPEC 06) ---------- */
+
+/* Los botones son <button>, no <a>: se les da lo que Leaflet da a `.leaflet-bar a`. */
+.viewer .view-controls__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid var(--color-line);
+  cursor: pointer;
+}
+
+/* Cada botón es su propia caja; el hueco entre ellas lo da el espacio de cabo a cabo. */
+.viewer .view-controls__block + .view-controls__block {
+  margin-top: var(--space-2);
+}
+
+.viewer .view-controls__btn {
+  border-bottom: none;
+}
+
+/* "1:1" en pixel, más pequeño que el + / − */
+.viewer .view-controls__btn--text {
+  font-size: var(--font-size-pixel-sm);
+  line-height: 1;
+}
+
+.viewer .view-controls__btn svg {
+  display: block;
+  pointer-events: none;
 }
