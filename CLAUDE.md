@@ -51,6 +51,7 @@ El modelo de datos (stores `maps`, `images`, `markers`), la conversión de coord
 - **Leaflet** pinta fondo claro en `.leaflet-bar a:hover` y `:focus`: `viewer.css` sobrescribe los dos.
 - **Zoom de rueda propio** (SPEC 04): `js/ui/wheel-zoom.js` sustituye a `scrollWheelZoom` de Leaflet (desactivado). Interpola el zoom por fotograma con `requestAnimationFrame` y mueve la vista con la API interna `_move`/`_moveStart`/`_moveEnd` de Leaflet 1.9.4 (sin `viewreset`; `zoomend` solo al terminar). Guarda el punto anclado en coordenadas del mapa: medirlo cada fotograma con `containerPointToLatLng` acumula el redondeo de Leaflet. `viewer-view.js` llama a su `detach()` al desmontar.
 - **Límites de arrastre por eje**: `maxBounds` no es fijo; `updateMaxBounds()` lo recalcula en `zoomend` y `resize`, ampliando los bounds de la imagen para que siempre queden `MIN_VISIBLE_PX` (100) de ella dentro de la vista por eje. El handler de rueda aplica el mismo límite en cada fotograma (`minVisiblePx`).
+- **Vuelta a `maxBounds` sin animación**: `viewer-view.js` sustituye `_panInsideMaxBounds` del mapa por una versión con `animate: false`, antes del primer `setMaxBounds`. La animada se anida con la inercia del arrastre: deja una animación huérfana que frena arrastres posteriores y lanza `classList` de `undefined` tras `remove()`.
 - Press Start 2P no dibuja bien vocales acentuadas en mayúsculas ("VACÍA" → "VACıA"). Aceptado en SPEC 02.
 
 ## Verificar cambios
@@ -59,6 +60,7 @@ Verifica en el navegador con `tools/cdp-eval.mjs` (Chrome headless vía CDP; su 
 
 - Regresión: `tools/acceptance/spec-01.js`, `spec-02.js`, `spec-03.js` y `spec-04.js`, cada uno con un `WP_PROFILE` vacío. Crean un juego por servicio y trabajan dentro de `#/game/<id>`. Cada spec nueva añade su `tools/acceptance/spec-NN.js`.
 - La entrada sintética (`new KeyboardEvent`) no cierra un `<dialog>` con Esc: usa `window.cdpKey("Escape")`.
+- `Input.dispatchMouseEvent` descarta los eventos con coordenadas fuera de la ventana: un arrastre largo se hace en tramos dentro de ella (ver `dragBy` en `spec-04.js`). Quedarse quieto ~80 ms antes de soltar evita la inercia de Leaflet, que con eventos sintéticos dura segundos.
 - `window.cdpInput` acepta cualquier método CDP, no solo entrada: `Emulation.setEmulatedMedia` emula `prefers-reduced-motion` y `Emulation.setDeviceMetricsOverride` cambia la ventana. `clearDeviceMetricsOverride` deja una ventana más baja en headless: vuelve a fijar 1280×800.
 - Con `file://`, leer `document.styleSheets[i].cssRules` lanza `SecurityError`: comprueba estilos con `getComputedStyle`.
 
