@@ -2,7 +2,8 @@
  * Visor de mapas a pantalla completa con Leaflet (CRS.Simple).
  *
  * El mapa ocupa toda la ventana. Encima, a la izquierda, un panel lateral (.viewer__panel) con
- * "← Mapas", la portada y el nombre del juego (si se pudo leer) y el nombre del mapa. Es hermano
+ * "← Mapas", el nombre del juego (si se pudo leer) y el nombre del mapa; con 2 o más mapas en el
+ * juego, el nombre del mapa es un desplegable (selector) con los mapas del juego, en orden alfabético. Es hermano
  * del escenario, no hijo del contenedor de Leaflet: superponerlo no redimensiona el mapa.
  * La pestaña .viewer__toggle lo pliega y despliega (siempre empieza expandido; no se guarda).
  * Contraído, el panel sale por la izquierda y queda inert; la pestaña, fuera de él, queda en el borde.
@@ -19,7 +20,8 @@
  *   - Pantalla completa (botón de view-controls): Fullscreen API sobre <html>; en ella solo se ve el
  *     mapa y los controles (.viewer--fullscreen oculta el panel y su pestaña).
  * Al salir se quitan el handler de rueda y el de fullscreenchange, se sale de pantalla completa,
- * se destruye el mapa Leaflet y se revocan los object URLs de la imagen y de la portada.
+ * se quita el listener de pointerdown del selector, se destruye el mapa Leaflet y se revocan los
+ * object URLs de la imagen y de las miniaturas del selector.
  *
  * Nunca accede a IndexedDB: todo pasa por Waypoint.services.mapService y gameService.
  */
@@ -69,7 +71,6 @@
     var alive = true;
     var leafletMap = null;
     var imageUrl = null;
-    var coverUrl = null;
     var detachWheel = null;
     var controls = null; // L.Control de vista (pantalla completa, ajustar, 1:1)
 
@@ -111,6 +112,9 @@
     toggle.addEventListener("click", function () {
       panelExpanded = !panelExpanded;
       renderPanelState();
+      if (!panelExpanded) {
+        closeMapList(); // el panel queda inert: la lista no puede quedarse abierta
+      }
     });
     renderPanelState();
 
@@ -259,26 +263,145 @@
       });
     }
 
-    // Portada pequeña (o la inicial) y nombre del juego, entre "← Mapas" y el nombre del mapa.
-    // Solo informativo: no es enlace.
+    // Nombre del juego, entre "← Mapas" y el nombre del mapa. Solo informativo: no es enlace.
     function showGame(game) {
       var block = el("div", "viewer__game");
-      var cover = el("div", "viewer__game-cover");
-      if (game.cover) {
-        coverUrl = URL.createObjectURL(game.cover);
-        var img = el("img", "viewer__game-img");
-        img.src = coverUrl;
-        img.alt = "";
-        cover.appendChild(img);
-      } else {
-        var placeholder = el("div", "game-placeholder", Array.from(game.name)[0].toUpperCase());
-        placeholder.setAttribute("aria-hidden", "true");
-        cover.appendChild(placeholder);
-      }
-      var name = el("p", "viewer__game-name", game.name);
-      block.appendChild(cover);
-      block.appendChild(name);
+      block.appendChild(el("p", "viewer__game-name", game.name));
       panel.insertBefore(block, title);
+    }
+
+    // Selector de mapas: con 2 o más mapas en el juego, el nombre pasa a ser un botón con chevron.
+    // textContent de .viewer__title sigue siendo el nombre (el SVG no aporta texto).
+    // Con 1 mapa, o mientras la lista no ha llegado o si falla, el título queda como texto.
+    var mapListOpen = false; // siempre false al montar
+    var mapTrigger = null;
+    var mapList = null; // <ul class="viewer__map-list">, bajo el nombre del mapa
+    var mapListBuilt = false; // las filas (y sus object URLs) se crean al abrir por primera vez
+    var thumbUrls = []; // object URLs de las miniaturas, revocados al desmontar
+    var listedMaps = [];
+    var currentMapId = null;
+
+    function renderMapList() {
+      if (!mapTrigger) {
+        return;
+      }
+      if (mapListOpen && !mapListBuilt) {
+        buildMapList();
+      }
+      mapList.hidden = !mapListOpen;
+      mapTrigger.setAttribute("aria-expanded", String(mapListOpen));
+      mapTrigger.classList.toggle("viewer__map-trigger--open", mapListOpen);
+    }
+
+    function closeMapList() {
+      if (!mapListOpen) {
+        return;
+      }
+      mapListOpen = false;
+      renderMapList();
+    }
+
+    // Clic (pointerdown) fuera de la lista y del disparador, también sobre el mapa: cierra sin
+    // cambiar de mapa. No se detiene el evento: el clic sigue llegando al mapa (arrastre normal).
+    function onDocumentPointerDown(event) {
+      if (!mapListOpen || mapList.contains(event.target) || mapTrigger.contains(event.target)) {
+        return;
+      }
+      closeMapList();
+    }
+    document.addEventListener("pointerdown", onDocumentPointerDown);
+
+    // Esc con el foco en el panel: cierra la lista y devuelve el foco al disparador.
+    panel.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && mapListOpen) {
+        closeMapList();
+        mapTrigger.focus();
+      }
+    });
+
+    // Hueco de 48×32 con el fondo de las tarjetas; con miniatura lleva un <img>.
+    function mapThumb(map) {
+      var thumb = el("span", "viewer__map-thumb");
+      if (map.thumbnail) {
+        var url = URL.createObjectURL(map.thumbnail);
+        thumbUrls.push(url);
+        var img = el("img", "viewer__map-thumb-img");
+        img.src = url;
+        img.alt = "";
+        thumb.appendChild(img);
+      }
+      return thumb;
+    }
+
+    function buildMapList() {
+      mapListBuilt = true;
+      listedMaps.forEach(function (map) {
+        var item = el("li", "viewer__map-item");
+        var row;
+        if (map.id === currentMapId) {
+          // El mapa abierto: solo resaltado, ni botón ni foco.
+          row = el("div", "viewer__map-row viewer__map-row--current");
+          row.setAttribute("aria-current", "page");
+        } else {
+          row = el("button", "viewer__map-row");
+          row.type = "button";
+        }
+        row.dataset.mapId = map.id;
+        row.appendChild(mapThumb(map));
+        row.appendChild(el("span", "viewer__map-row-name", map.name));
+        item.appendChild(row);
+        mapList.appendChild(item);
+      });
+    }
+
+    function chevronIcon() {
+      var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "viewer__map-chevron");
+      svg.setAttribute("viewBox", "0 0 14 14");
+      svg.setAttribute("width", "14");
+      svg.setAttribute("height", "14");
+      svg.setAttribute("aria-hidden", "true");
+      svg.setAttribute("focusable", "false");
+      var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", "M2 4.5 7 9.5 12 4.5");
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", "currentColor");
+      path.setAttribute("stroke-width", "2");
+      svg.appendChild(path);
+      return svg;
+    }
+
+    function showMapTrigger(map, maps) {
+      if (maps.length < 2) {
+        return;
+      }
+      mapTrigger = el("button", "viewer__map-trigger");
+      mapTrigger.type = "button";
+      mapTrigger.setAttribute("aria-haspopup", "true");
+      mapTrigger.setAttribute("aria-controls", "viewer-map-list");
+      mapTrigger.appendChild(el("span", "viewer__map-name", map.name));
+      mapTrigger.appendChild(chevronIcon());
+      mapTrigger.addEventListener("click", function () {
+        mapListOpen = !mapListOpen;
+        renderMapList();
+      });
+      title.textContent = "";
+      title.appendChild(mapTrigger);
+
+      listedMaps = maps;
+      currentMapId = map.id;
+      mapList = el("ul", "viewer__map-list");
+      mapList.id = "viewer-map-list";
+      mapList.hidden = true;
+      // Delegado: clic o Enter en una fila abre ese mapa (nueva entrada de historial).
+      mapList.addEventListener("click", function (event) {
+        var row = event.target.closest("button.viewer__map-row");
+        if (row && mapList.contains(row)) {
+          router.goToMap(row.dataset.mapId);
+        }
+      });
+      panel.insertBefore(mapList, title.nextSibling);
+      renderMapList();
     }
 
     function showMap(result) {
@@ -311,6 +434,17 @@
           .catch(function (error) {
             console.error("[viewer] No se pudo leer el juego del mapa:", error);
           });
+        // La lista de mapas del juego también llega aparte: si falla, el título queda como texto.
+        mapService
+          .listByName(result.map.gameId)
+          .then(function (maps) {
+            if (alive) {
+              showMapTrigger(result.map, maps);
+            }
+          })
+          .catch(function (error) {
+            console.error("[viewer] No se pudo leer la lista de mapas del juego:", error);
+          });
       })
       .catch(function (error) {
         if (!alive) {
@@ -329,6 +463,7 @@
     return function unmount() {
       alive = false;
       document.removeEventListener("fullscreenchange", onFullscreenChange);
+      document.removeEventListener("pointerdown", onDocumentPointerDown);
       if (document.fullscreenElement) {
         document.exitFullscreen().catch(function () {});
       }
@@ -344,10 +479,10 @@
         URL.revokeObjectURL(imageUrl);
         imageUrl = null;
       }
-      if (coverUrl) {
-        URL.revokeObjectURL(coverUrl);
-        coverUrl = null;
-      }
+      thumbUrls.forEach(function (url) {
+        URL.revokeObjectURL(url);
+      });
+      thumbUrls = [];
       document.body.classList.remove("is-viewer");
       document.title = APP_TITLE;
       container.innerHTML = "";
