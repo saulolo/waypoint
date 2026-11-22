@@ -3,7 +3,7 @@
 App web local para seguir tu progreso en videojuegos sobre sus mapas grandes.
 Creas una carpeta por juego (con su portada), cargas dentro las imágenes de sus mapas, se guardan en tu navegador y las abres con zoom y arrastre.
 
-> Estado: **SPEC 07** (juegos con portada, biblioteca de mapas en orden alfabético y visor con zoom fluido, panel lateral plegable con selector de mapas y controles de vista, con tema visual arcade retro). Los marcadores marcables como hechos llegan en SPEC 08.
+> Estado: **SPEC 08** (juegos con portada, biblioteca de mapas en orden alfabético y visor con zoom fluido, panel lateral plegable con selector de mapas, controles de vista y pines sobre el mapa, con tema visual arcade retro). Editar pines y marcarlos como hechos llega en SPEC 09.
 >
 > **Aviso de la versión SPEC 03:** al actualizar desde la versión anterior, los mapas que ya tenías guardados se **borran** (ahora todo mapa pertenece a un juego). Si quieres conservar alguno, vuelve a cargarlo dentro de un juego.
 
@@ -51,8 +51,7 @@ Al abrir un juego ves su cabecera (**← Juegos**, portada, nombre y número de 
 
 - Clic en una tarjeta para abrir el mapa a pantalla completa, ajustado a la ventana.
 - **Panel lateral**: arriba a la izquierda, encima del mapa, con **← Mapas**, el nombre del juego y el nombre del mapa. Ocupa media ventana de alto y tapa esa parte del mapa.
-  - La pestaña **◀** pegada a su borde lo pliega hacia la izquierda y deja el mapa entero a la vista; **▶** lo vuelve a abrir. Plegarlo no mueve ni cambia el zoom del mapa.
-  - Siempre se abre desplegado al entrar en un mapa.
+  - Al entrar en un mapa está **plegado**: solo se ve la pestaña **▶** en el borde izquierdo. Púlsala para abrirlo; **◀** lo vuelve a plegar. Plegarlo o abrirlo no mueve ni cambia el zoom del mapa.
   - **Selector de mapas**: si el juego tiene 2 o más mapas, el nombre del mapa lleva un chevron y es un desplegable con los mapas del juego (miniatura y nombre, en orden alfabético). El mapa abierto aparece resaltado; elegir otro lo abre sin volver a la biblioteca (**Atrás** vuelve al anterior). Se cierra con otro clic en el nombre, **Esc**, clic fuera o al plegar el panel.
   - La rueda y el arrastre sobre el panel no mueven el mapa.
 - **Rueda del ratón**: zoom continuo hacia el punto bajo el cursor. Cada clic de rueda acerca o aleja un poco (hacen falta 3 clics para doblar el tamaño).
@@ -60,13 +59,29 @@ Al abrir un juego ves su cabecera (**← Juegos**, portada, nombre y número de 
 - **Botones + / −** y **doble clic**: un paso de zoom (el doble o la mitad).
 - **Rango de zoom**: desde 1/4 de "mapa entero visible" hasta 4× el tamaño real.
 - **Botones de vista** (abajo a la derecha, encima de + / −, cada uno en su propia caja):
-  - **Pin con +**: reservado para añadir pines; todavía no hace nada (llega con los marcadores, SPEC 08).
+  - **Pin con +**: añade un pin (ver *Pines*).
   - **Pantalla completa**: la app ocupa todo el monitor, sin la interfaz del navegador. En ella solo se ven el mapa y los botones: el panel lateral se oculta y vuelve como estaba al salir. Se sale con el mismo botón o con **Esc**. Salir del mapa también sale de pantalla completa.
   - **1:1 / ajustar**: un solo botón. Muestra **1:1** y pone el mapa a tamaño real, manteniendo el punto que estaba en el centro. Con el mapa a tamaño real cambia a un recuadro, y al pulsarlo deja el mapa entero visible y centrado. Si haces zoom con la rueda, vuelve a mostrar **1:1**.
 - **Arrastrar**: mueve el mapa. Puede salir de la ventana por cualquier borde, pero siempre queda un trozo visible (100 px) para no perderlo.
 - Con **reducir movimiento** activado, la rueda, 1:1 y ajustar saltan a la vista final sin animar.
 - **← Mapas** (vuelve al juego del mapa) o el botón atrás del navegador para volver.
 - La dirección (`#/map/<id>`) es estable: recargar (F5) reabre el mismo mapa.
+
+### Pines
+
+Marcas sobre el mapa con un icono, un color, un nombre y una nota. Se guardan en el mapa, en el sitio exacto de la imagen: no cambian de tamaño en pantalla al hacer zoom.
+
+- **Añadir**: botón **pin con +**. A la derecha se abre el panel *Añadir pin* y cae un pin borrador en el centro de la zona libre del mapa (nunca encima de otro pin: si lo taparía, cae al lado). Mientras está abierto, los botones de vista y + / − se ocultan; el mapa se sigue moviendo y haciendo zoom.
+  - **Colocarlo**: arrástralo, o haz clic en el mapa para llevarlo a ese punto. No puede salir de la imagen.
+  - **Nombre** (hasta 60 caracteres) y **Nota** (hasta 500, admite varias líneas). Sin nombre, se usa el del icono.
+  - **Color**: 8 opciones (dorado, blanco, negro, rojo, naranja, verde, cian y violeta).
+  - **Icono**: abre al lado el selector con 53 iconos en 7 categorías plegables (Localizaciones, Enemigos, Tesoros, Equipo, Misiones, Información y Viaje) y la barra de **tamaño** (20–64 px). Los cambios se ven al momento en el borrador. *Listo* o **Esc** lo cierran.
+  - **Último usado**: el icono y el color del último pin guardado en cualquier mapa del juego. El borrador ya cae con ellos; el botón los vuelve a aplicar. El tamaño empieza siempre en 32 px.
+  - **Guardar** lo deja en el mapa. **Cancelar** o **Esc** lo descartan.
+- **Ver**: pasa el ratón por un pin para ver su nombre; haz clic para ver nombre, nota y *Borrar*. El popup se cierra con su ×, **Esc** o un clic en el mapa.
+- **Mover**: mantén pulsado un pin y arrástralo; se guarda al soltar. También funciona con el panel *Añadir pin* abierto (ahí, un clic sin arrastrar sobre un pin lleva el borrador a ese punto).
+- **Borrar**: *Borrar* en su popup; pide confirmación y no se puede deshacer. Borrar un mapa o un juego borra también sus pines.
+- Editar un pin guardado y marcarlo como hecho llegan en SPEC 09.
 
 ### Aspecto
 
@@ -82,7 +97,7 @@ Todo se guarda **en el navegador** (IndexedDB), en este equipo. No se sube nada 
 
 Ten en cuenta:
 
-- **Borrar los datos de navegación** de Chrome/Edge (cookies y datos de sitios) **borra tus juegos, portadas y mapas**. Aún no hay exportar/importar copias de seguridad.
+- **Borrar los datos de navegación** de Chrome/Edge (cookies y datos de sitios) **borra tus juegos, portadas, mapas y pines**. Aún no hay exportar/importar copias de seguridad.
 - Los datos son **de ese navegador y ese perfil**: Chrome y Edge, o dos perfiles de Chrome, tienen bibliotecas separadas.
 - Puedes **mover o renombrar la carpeta** del proyecto: los datos no dependen de la ruta.
 - Una ventana de **incógnito** no ve tu biblioteca y la pierde al cerrarse.
@@ -102,7 +117,7 @@ La documentación técnica está en [`CLAUDE.md`](CLAUDE.md) y las especificacio
 
 ## Próximamente
 
-- **SPEC 08**: marcadores sobre el mapa, marcables como hechos.
+- **SPEC 09**: editar pines guardados (nombre, nota y estilo), marcarlos como hechos y filtros.
 - Ideas para después: categorías con color, rutas, exportar/importar copias de seguridad, tiles para imágenes gigantes.
 
 ## Créditos

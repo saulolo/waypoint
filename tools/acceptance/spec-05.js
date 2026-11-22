@@ -74,17 +74,26 @@
   ok("03_stage_full_window", Math.abs(st.width - innerWidth) <= 1 && Math.abs(st.height - innerHeight) <= 1 && st.left === 0 && st.top === 0,
     { stage: [st.width, st.height], window: [innerWidth, innerHeight] });
 
-  ok("04_panel_expanded_on_open", Math.abs(pr().left) <= 1 && Math.abs(pr().width - 320) <= 1 && !$(".viewer").classList.contains("viewer--panel-collapsed"),
-    { left: pr().left, width: pr().width });
+  // Desde SPEC 08 el panel empieza contraído (antes, expandido).
+  ok("04_panel_collapsed_on_open", pr().right <= 0 && Math.abs(pr().width - 260) <= 1 && $(".viewer").classList.contains("viewer--panel-collapsed") && panel().inert,
+    { right: pr().right, width: pr().width });
+
+  ok("08_toggle_collapsed_aria", toggle().getAttribute("aria-expanded") === "false" && toggle().getAttribute("aria-label") === "Expandir panel"
+    && toggle().getAttribute("aria-controls") === panel().id,
+    { expanded: toggle().getAttribute("aria-expanded"), label: toggle().getAttribute("aria-label") });
+
+  // Expandir para el resto de comprobaciones (contenido, rueda y arrastre sobre el panel).
+  const beforeFirstExpand = imgPos();
+  await clickEl(".viewer__toggle");
+  const firstExpandImg = imgPos();
+  ok("08b_expand", toggle().getAttribute("aria-expanded") === "true" && toggle().getAttribute("aria-label") === "Contraer panel"
+    && Math.abs(pr().left) <= 1 && !panel().inert,
+    { left: pr().left, label: toggle().getAttribute("aria-label") });
 
   const gameName = $(".viewer__game-name"), title = $(".viewer__title");
   ok("05_panel_content", $(".viewer__back")?.textContent === "← Mapas" && gameName?.textContent === "Juego portada" && title.textContent === "Mapa A" && isPixel(gameName) && isPixel(title)
     && panel().contains($(".viewer__back")) && panel().contains(gameName) && panel().contains(title),
     { back: $(".viewer__back")?.textContent, game: gameName?.textContent, map: title.textContent, fonts: [css(gameName).fontFamily, css(title).fontFamily] });
-
-  ok("08_toggle_expanded_aria", toggle().getAttribute("aria-expanded") === "true" && toggle().getAttribute("aria-label") === "Contraer panel"
-    && toggle().getAttribute("aria-controls") === panel().id && !panel().inert,
-    { expanded: toggle().getAttribute("aria-expanded"), label: toggle().getAttribute("aria-label") });
 
   // 14. Ajuste inicial a la ventana completa (con el panel encima)
   const fit = ir();
@@ -135,10 +144,11 @@
   await clickEl(".viewer__toggle");
   const reopenedImg = imgPos();
   ok("11_expand_again", toggle().getAttribute("aria-expanded") === "true" && toggle().getAttribute("aria-label") === "Contraer panel"
-    && Math.abs(pr().left) <= 1 && Math.abs(pr().width - 320) <= 1 && !panel().inert,
+    && Math.abs(pr().left) <= 1 && Math.abs(pr().width - 260) <= 1 && !panel().inert,
     { left: pr().left, label: toggle().getAttribute("aria-label") });
 
-  ok("12_toggle_keeps_view", same(before, collapsedImg) && same(before, reopenedImg), { before, collapsed: collapsedImg, reopened: reopenedImg });
+  ok("12_toggle_keeps_view", same(before, collapsedImg) && same(before, reopenedImg) && same(beforeFirstExpand, firstExpandImg),
+    { before, collapsed: collapsedImg, reopened: reopenedImg, firstExpand: [beforeFirstExpand, firstExpandImg] });
 
   // 19. + / − en la esquina inferior derecha
   const zc = $(".leaflet-control-zoom").getBoundingClientRect();
@@ -151,14 +161,14 @@
   await sleep(300);
   const leftAlive = viewerUrls.filter((u) => liveUrls.has(u));
 
-  // 17. Otro mapa: panel expandido y sin object URLs del visor anterior vivas
+  // 17. Otro mapa: panel contraído y sin object URLs del visor anterior vivas
   await openViewer(mapB);
-  await clickEl(".viewer__toggle");
-  await openViewer(mapA); // se monta un visor nuevo: tiene que empezar expandido
-  const freshExpanded = toggle().getAttribute("aria-expanded") === "true" && Math.abs(pr().left) <= 1;
+  await clickEl(".viewer__toggle"); // expandido en B
+  await openViewer(mapA); // se monta un visor nuevo: tiene que empezar contraído
+  const freshCollapsed = toggle().getAttribute("aria-expanded") === "false" && pr().right <= 0;
   window.location.hash = "#/game/" + withCover.id; await sleep(500);
-  ok("17_reopen_expanded_and_revoked", viewerUrls.length === 1 && leftAlive.length === 0 && freshExpanded,
-    { viewerUrls: viewerUrls.length, leftAlive: leftAlive.length, freshExpanded });
+  ok("17_reopen_collapsed_and_revoked", viewerUrls.length === 1 && leftAlive.length === 0 && freshCollapsed,
+    { viewerUrls: viewerUrls.length, leftAlive: leftAlive.length, freshCollapsed });
 
   // 06. Portada (mapa A) e inicial (mapa C, juego sin portada)
   await openViewer(mapC);

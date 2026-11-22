@@ -31,7 +31,7 @@ Esta spec toma el número 07. Los marcadores pasan a SPEC 08, como ya hicieron S
   - Fila del mapa abierto: resaltada con el color de acento (sin "✓"), `aria-current="page"`, no es botón (no recibe foco ni tiene acción).
   - Resto de filas: `<button>`; clic o Enter abre ese mapa.
 - **Abrir un mapa desde la lista:** navega a `#/map/<id>` con `router.goToMap(id)` (nueva entrada de historial).
-  - El visor se remonta como al abrirlo desde la biblioteca: vista inicial "mapa entero visible", panel expandido, lista cerrada.
+  - El visor se remonta como al abrirlo desde la biblioteca: vista inicial "mapa entero visible", panel expandido (contraído desde SPEC 08), lista cerrada.
   - Atrás del navegador vuelve al mapa anterior.
   - Como cualquier apertura, actualiza `lastOpenedAt` del mapa y `lastUsedAt` del juego (`mapService.open`).
 - **Cerrar sin cambiar de mapa:**

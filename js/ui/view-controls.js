@@ -1,7 +1,7 @@
 /*
- * Controles del visor (SPEC 06): añadir pin (solo el botón; la acción llega con los marcadores,
- * SPEC 08), pantalla completa y un botón de escala que alterna entre tamaño real (1:1) y ajustar
- * a la ventana. Tres botones separados, cada uno en su propia caja.
+ * Controles del visor (SPEC 06): añadir pin (abre el panel de pin, SPEC 08), pantalla completa y
+ * un botón de escala que alterna entre tamaño real (1:1) y ajustar a la ventana. Tres botones
+ * separados, cada uno en su propia caja.
  * Es un L.Control en la
  * esquina inferior derecha; viewer-view.js lo añade después del de zoom, porque en las esquinas
  * de abajo Leaflet apila el último añadido arriba.
@@ -65,9 +65,10 @@
    * Crea el control. Hay que añadirlo al mapa con control.addTo(map).
    * @param {{ onToggleFullscreen: function, onFit: function, onActualSize: function, onAddPin?: function }} handlers
    *   onAddPin es opcional: sin él, el botón de pin no hace nada (SPEC 08 lo conecta).
-   * @returns {L.Control} con setFullscreen(isFullscreen)
+   * @returns {L.Control} con setFullscreen(isFullscreen), setActualSize(isActualSize) y focusAddPin()
    */
   function create(handlers) {
+    var pinBtn = null;
     var fullscreenBtn = null;
     var fullscreenIcon = null;
     var scaleBtn = null;
@@ -94,7 +95,7 @@
         // Contenedor sin marco: cada botón va en su propia .leaflet-bar, separado de los demás.
         var bar = L.DomUtil.create("div", "view-controls");
 
-        var pinBtn = button(LABEL_ADD_PIN);
+        pinBtn = button(LABEL_ADD_PIN);
         pinBtn.appendChild(svgIcon(PATH_PIN, 24));
         pinBtn.addEventListener("click", function () {
           if (handlers.onAddPin) {
@@ -138,6 +139,13 @@
         }
         atActualSize = isActualSize;
         renderScale();
+      },
+
+      /** Devuelve el foco al botón "Añadir pin" (al cerrar el panel de pin). */
+      focusAddPin: function () {
+        if (pinBtn) {
+          pinBtn.focus();
+        }
       },
 
       /** Cambia icono, aria-label y title del botón de pantalla completa. */

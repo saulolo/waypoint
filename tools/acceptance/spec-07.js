@@ -59,6 +59,11 @@
     if (window.location.hash === "#/map/" + mapId) { window.location.hash = "#/"; await sleep(500); }
     window.location.hash = "#/map/" + mapId;
     await waitFor(() => !!$(".leaflet-image-layer")?.complete); await sleep(500);
+    await expandPanel();
+  };
+  // Desde SPEC 08 el panel empieza contraído: el selector está dentro, así que se expande.
+  const expandPanel = async () => {
+    if ($(".viewer")?.classList.contains("viewer--panel-collapsed")) await clickEl($(".viewer__toggle"), 400);
   };
   const trigger = () => $(".viewer__map-trigger"), list = () => $(".viewer__map-list"), panel = () => $(".viewer__panel"), title = () => $(".viewer__title");
   const rect = (e) => e.getBoundingClientRect();
@@ -144,8 +149,9 @@
   await waitFor(() => window.location.hash === "#/map/" + targetId); await waitFor(() => !!$(".leaflet-image-layer")?.complete); await sleep(600);
   ok("15_tab_and_enter", tabOk && window.location.hash === "#/map/" + targetId && title().textContent === targetName, { hash: window.location.hash, targetId, targetName, title: title().textContent, tabOk });
 
-  // 09. Saltar con clic: visor remontado con vista ajustada, panel expandido y lista cerrada
+  // 09. Saltar con clic: visor remontado con vista ajustada, panel contraído (SPEC 08) y lista cerrada
   await waitFor(() => !!trigger());
+  await expandPanel();
   await clickEl(trigger(), 400);
   const fromId = window.location.hash.replace("#/map/", "");
   const jumpRow = rows().find((r) => r.tagName === "BUTTON" && r.dataset.mapId !== fromId);
@@ -154,7 +160,7 @@
   await waitFor(() => window.location.hash === "#/map/" + jumpId); await waitFor(() => !!$(".leaflet-image-layer")?.complete); await sleep(700);
   const fit = ir();
   const fitOk = (Math.abs(fit.width - window.innerWidth) <= 2 || Math.abs(fit.height - window.innerHeight) <= 2) && fit.width <= window.innerWidth + 2 && fit.height <= window.innerHeight + 2;
-  ok("09_jump_remounts", window.location.hash === "#/map/" + jumpId && title().textContent === jumpName && fitOk && !$(".viewer").classList.contains("viewer--panel-collapsed")
+  ok("09_jump_remounts", window.location.hash === "#/map/" + jumpId && title().textContent === jumpName && fitOk && $(".viewer").classList.contains("viewer--panel-collapsed")
     && !visible(list()) && (!trigger() || trigger().getAttribute("aria-expanded") === "false"), { hash: window.location.hash, jumpId, jumpName, title: title().textContent, fit: [fit.width, fit.height], win: [window.innerWidth, window.innerHeight], collapsed: $(".viewer").classList.contains("viewer--panel-collapsed"), listVisible: visible(list()) });
 
   // 10. Atrás vuelve al mapa anterior

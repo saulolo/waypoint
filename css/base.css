@@ -31,13 +31,15 @@ img {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
   color: inherit;
 }
 
 /* El texto escrito se ve exacto: nunca en la fuente pixel. */
-input {
+input,
+textarea {
   font-family: var(--font-mono);
 }
 

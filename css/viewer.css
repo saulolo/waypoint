@@ -102,6 +102,12 @@ body.is-viewer {
   display: none;
 }
 
+/* Añadiendo un pin (SPEC 08): el panel de pin ocupa la esquina derecha; los controles de vista y
+   + / − se ocultan. El zoom sigue con la rueda y el doble clic. */
+.viewer--adding-pin .leaflet-bottom.leaflet-right {
+  display: none;
+}
+
 /* La regla global de effects.css solo anula animation: la transición se anula aquí. */
 @media (prefers-reduced-motion: reduce) {
   .viewer__panel,

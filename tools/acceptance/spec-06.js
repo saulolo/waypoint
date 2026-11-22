@@ -103,12 +103,17 @@
     { pin: !!pinBtn().querySelector("svg"), fs: !!fsBtn().querySelector("svg"), scaleText: scaleBtn().textContent, pixel: isPixel(scaleBtn()) });
 
   // 07. Clic, doble clic, arrastre y rueda sobre el bloque no llegan al mapa
+  // Desde SPEC 08 el pin abre el panel de pin (que oculta estos controles): aquí solo interesa que
+  // los eventos no lleguen al mapa, así que se anula la apertura mientras dura la comprobación.
+  const realOpen = Waypoint.ui.pinEditor.open;
+  Waypoint.ui.pinEditor.open = () => () => {};
   const z0 = map.getZoom(), pos0 = imgPos();
   await clickEl(pinBtn(), 400);
   await clickEl(pinBtn(), 600, 2); // doble clic real
   const r = rect(pinBtn());
   await drag(r.left + 18, r.top + 18, r.left - 200, r.top - 100);
   await wheelAt(r.left + 18, r.top + 18);
+  Waypoint.ui.pinEditor.open = realOpen;
   ok("07_block_events_isolated", Math.abs(map.getZoom() - z0) < 0.01 && same(pos0, imgPos()) && !pageError,
     { z0, z1: map.getZoom(), before: pos0, after: imgPos(), pageError });
 
@@ -190,8 +195,10 @@
   const sEsc = fsState();
   ok("15_fullscreen_exit_escape", JSON.stringify(sEsc) === JSON.stringify(sOut), { esc: sEsc, button: sOut });
 
-  // 16. El panel conserva su estado (contraído y expandido)
+  // 16. El panel conserva su estado (contraído y expandido). Desde SPEC 08 empieza contraído:
+  // se expande primero.
   const collapsedFlag = () => viewer().classList.contains("viewer--panel-collapsed");
+  await clickEl(toggleEl(), 400);
   const expandedBefore = !collapsedFlag();
   await clickEl(fsBtn(), 1200); await clickEl(fsBtn(), 1200);
   const expandedAfter = !collapsedFlag() && !panelEl().inert;

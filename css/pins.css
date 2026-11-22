@@ -1,0 +1,471 @@
+/*
+ * Pines del mapa (SPEC 08).
+ * Los colores salen de los tokens --color-pin-*: el glifo usa currentColor y el contorno,
+ * la variable --pin-outline (oscuro por defecto; claro para el color Negro).
+ */
+
+/* --- Glifo --- */
+
+.pin-glyph {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  --pin-outline: var(--color-pin-outline-dark);
+}
+
+/* Contorno por fuera de la silueta, del mismo grosor a cualquier tamaño. */
+.pin-glyph__body {
+  stroke: var(--pin-outline);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  vector-effect: non-scaling-stroke;
+}
+
+.pin-glyph__detail {
+  fill: var(--pin-outline);
+  fill-rule: evenodd;
+  stroke: none;
+}
+
+/* --- Colores --- */
+
+.pin--gold { color: var(--color-pin-gold); }
+.pin--white { color: var(--color-pin-white); }
+.pin--red { color: var(--color-pin-red); }
+.pin--orange { color: var(--color-pin-orange); }
+.pin--green { color: var(--color-pin-green); }
+.pin--cyan { color: var(--color-pin-cyan); }
+.pin--violet { color: var(--color-pin-violet); }
+
+.pin--black {
+  color: var(--color-pin-black);
+}
+
+.pin--black .pin-glyph {
+  --pin-outline: var(--color-pin-outline-light);
+}
+
+/* --- Marcador en el mapa (L.divIcon) --- */
+
+/* Leaflet da a los divIcon fondo y borde blancos solo con .leaflet-div-icon; aquí no se usa,
+   pero se deja explícito por si cambia. */
+.leaflet-marker-icon.pin {
+  border: 0;
+  background: none;
+}
+
+/* Borrador: se arrastra (SPEC 08, paso 7) y cae al abrir el panel. La caída anima el glifo, no el
+   contenedor: Leaflet coloca el contenedor con transform. */
+.leaflet-marker-icon.pin--draft {
+  cursor: grab;
+}
+
+.leaflet-dragging .leaflet-marker-icon.pin--draft {
+  cursor: grabbing;
+}
+
+/* Pines guardados: se mueven con clic sostenido y arrastre. */
+.leaflet-marker-icon.pin {
+  cursor: grab;
+}
+
+.leaflet-dragging .leaflet-marker-icon.pin {
+  cursor: grabbing;
+}
+
+/* Añadiendo un pin, los guardados no muestran tooltip (ni popup: pin-layer.js lo desliga). */
+.viewer--adding-pin .pin-tooltip--saved {
+  display: none;
+}
+
+.pin--dropping .pin-glyph {
+  animation: pin-drop 400ms both;
+}
+
+/* --- Tooltip con el nombre --- */
+
+.leaflet-tooltip.pin-tooltip {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
+
+.leaflet-tooltip-top.pin-tooltip::before {
+  border-top-color: var(--color-line);
+}
+
+/* --- Popup arcade (sustituye el fondo blanco de Leaflet) --- */
+
+.pin-popup .leaflet-popup-content-wrapper {
+  border: 1px solid var(--color-neon-cyan);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-dialog);
+  color: var(--color-text);
+}
+
+.pin-popup .leaflet-popup-tip {
+  border: 1px solid var(--color-neon-cyan);
+  background: var(--color-surface);
+  box-shadow: none;
+}
+
+/* Compacto: el popup no debe tapar el mapa alrededor del pin. */
+.pin-popup .leaflet-popup-content {
+  margin: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.pin-popup a.leaflet-popup-close-button {
+  color: var(--color-text-muted);
+}
+
+.pin-popup a.leaflet-popup-close-button:hover,
+.pin-popup a.leaflet-popup-close-button:focus-visible {
+  color: var(--color-neon-cyan);
+}
+
+.pin-popup a.leaflet-popup-close-button {
+  width: 20px;
+  height: 20px;
+  font-size: var(--font-size-lg);
+  line-height: 20px;
+}
+
+.pin-popup__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pin-popup__name {
+  margin: 0;
+  padding-right: var(--space-3); /* hueco para la × */
+  color: var(--color-neon-cyan);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-xs);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* .leaflet-popup-content p trae margin 1.3em: se anula con más especificidad. */
+.pin-popup .pin-popup__note {
+  margin: 0;
+  color: var(--color-text-muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pin-popup__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Botón pequeño: el .btn normal es de formulario y aquí sobra. */
+.pin-popup__actions .btn {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-pixel-xs);
+}
+
+/* --- Panel de pin (no modal; estilo de .dialog) --- */
+
+/* Hermano de .viewer__stage, anclado a la derecha. Con scroll interno si no cabe. */
+.pin-editor {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: 2;
+  box-sizing: border-box;
+  width: min(var(--pin-editor-width), calc(100vw - 2 * var(--space-4)));
+  max-height: calc(100% - 2 * var(--space-4));
+  overflow-y: auto;
+  scrollbar-color: var(--color-line) transparent;
+}
+
+.pin-editor__body {
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.pin-editor__title {
+  margin: 0;
+}
+
+.pin-editor__note {
+  min-height: 4.5em;
+  resize: vertical;
+}
+
+/* El fieldset no trae marco ni márgenes: lo da el panel. */
+.pin-editor__colors {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pin-editor__colors legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+}
+
+.pin-editor__color-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: var(--space-1);
+}
+
+/* Muestra de color: un radio sin apariencia nativa; el color va dentro de un marco oscuro. */
+.pin-editor__color {
+  appearance: none;
+  box-sizing: border-box;
+  width: 100%;
+  aspect-ratio: 1;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--color-line);
+  background: currentColor;
+  background-clip: content-box;
+  cursor: pointer;
+}
+
+/* Negro apenas se distingue del panel: un filo claro, como el contorno de sus pines. */
+.pin-editor__color.pin--black {
+  box-shadow: inset 0 0 0 4px var(--color-surface), inset 0 0 0 5px var(--color-pin-outline-light);
+}
+
+.pin-editor__color:checked {
+  border: 2px solid var(--color-neon-cyan);
+  padding: 3px;
+  box-shadow: var(--shadow-btn-cyan);
+}
+
+/* Botón "Icono": glifo actual + etiqueta. */
+.pin-editor__icon-btn,
+.pin-editor__last {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-md);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pin-editor__icon-btn:hover,
+.pin-editor__last:hover:not(:disabled) {
+  border-color: var(--color-neon-cyan);
+}
+
+.pin-editor__icon-glyph,
+.pin-editor__last-glyph {
+  flex: none;
+  width: 28px;
+  height: 28px;
+}
+
+.pin-editor__last:disabled {
+  color: var(--color-text-faint);
+  cursor: default;
+}
+
+.pin-editor__actions {
+  margin-top: var(--space-2);
+}
+
+/* Botones más compactos que los de .dialog: el panel es estrecho. */
+.pin-editor__actions .btn {
+  flex: 1;
+  justify-content: center;
+  padding: var(--space-2) var(--space-3);
+}
+
+/* --- Selector de iconos (segundo panel, a la izquierda del de pin) --- */
+
+.pin-picker {
+  position: absolute;
+  top: var(--space-4);
+  right: calc(var(--space-4) + var(--pin-editor-width) + var(--space-2));
+  z-index: 2;
+  box-sizing: border-box;
+  width: var(--pin-picker-width);
+  max-height: calc(100% - 2 * var(--space-4));
+  overflow-y: auto;
+  scrollbar-color: var(--color-line) transparent;
+}
+
+.pin-picker__body {
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-3);
+}
+
+.pin-picker__title {
+  margin: 0;
+}
+
+.pin-picker__category {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pin-picker__heading {
+  width: 100%;
+  padding: 0;
+  margin-bottom: var(--space-1);
+}
+
+/* Encabezado plegable: botón a todo el ancho con el nombre y un chevron. */
+.pin-picker__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-bottom: 1px solid var(--color-line-soft);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-xs);
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.pin-picker__toggle:hover {
+  color: var(--color-neon-cyan);
+}
+
+.pin-picker__chevron {
+  flex: none;
+  color: var(--color-neon-cyan);
+  transition: transform var(--transition-fast);
+}
+
+.pin-picker__toggle[aria-expanded="true"] .pin-picker__chevron {
+  transform: rotate(180deg);
+}
+
+.pin-picker__toggle:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pin-picker__chevron {
+    transition: none;
+  }
+}
+
+.pin-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+/* Opción: glifo + etiqueta. El radio la cubre entera, transparente, para recibir clic y foco. */
+.pin-picker__option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-1);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.3;
+}
+
+.pin-picker__radio {
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+}
+
+.pin-picker__option:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+/* El icono elegido, con el color de acento. */
+.pin-picker__option:has(.pin-picker__radio:checked) {
+  background: var(--color-surface-hover);
+  color: var(--color-accent);
+}
+
+.pin-picker__radio:checked {
+  border-color: var(--color-accent);
+}
+
+.pin-picker__glyph {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+/* Parte por palabras; solo corta una palabra si no cabe entera. */
+.pin-picker__label {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.pin-picker__size-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.pin-picker__size-value {
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
+
+.pin-picker__range {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+/* Foco visible hacia dentro en los controles propios (los paneles llevan clip-path). */
+.pin-picker__radio:focus-visible,
+.pin-picker__range:focus-visible,
+.pin-editor__color:focus-visible,
+.pin-editor__icon-btn:focus-visible,
+.pin-editor__last:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: -2px;
+}
+
+.pin-editor .dialog__input:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: -2px;
+}
