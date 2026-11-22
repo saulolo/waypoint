@@ -21,6 +21,9 @@
  *     mapa y los controles (.viewer--fullscreen oculta el panel y su pestaña).
  *   - Pines (SPEC 08): al crear el mapa, Waypoint.ui.pinLayer pinta los pines guardados. El botón
  *     "Añadir pin" abre Waypoint.ui.pinEditor (panel derecho y borrador; .viewer--adding-pin).
+ *   - Filtro de pines (SPEC 09): dos botones en el panel, bajo el juego ("Pendientes" y "Encontrados"),
+ *     independientes; se guardan por mapa (mapService.setHideFound / setHidePending) y se aplican con
+ *     pins.setHideFound / setHidePending, también con el panel contraído.
  * Al salir se quitan el handler de rueda y el de fullscreenchange, se sale de pantalla completa,
  * se cancela el panel de pin si está abierto, se destruye la capa de pines,
  * se quita el listener de pointerdown del selector, se destruye el mapa Leaflet y se revocan los
@@ -98,6 +101,74 @@
     back.href = "#/";
     var title = el("h1", "viewer__title", "Cargando…");
     panel.appendChild(back);
+
+    // "Ocultar encontrados" (SPEC 09): se guarda por mapa (maps.hideFound). Desactivado hasta que el
+    // mapa y la capa de pines estén listos; el valor inicial lo pone createLeafletMap.
+    // Dos botones independientes (SPEC 09): cada uno decide si se ven los pines pendientes / encontrados.
+    // Sin raya = se ven; con raya = ocultos. Con los dos tachados no queda ningún pin; solo el de
+    // "Encontrados" abierto = solo los encontrados. Se guardan por mapa (maps.hidePending / hideFound).
+    var SVG_ATTRS = 'viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+    var SLASH = '<path class="viewer__pin-filter-slash" d="M3 3l18 18"/>'; // raya: ese tipo de pin está oculto
+    var FILTERS = [
+      // Pendientes: chincheta de mapa. Encontrados: círculo con check.
+      { key: "pending", label: "Pendientes", visible: true, icon: '<path d="M12 22s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>' },
+      { key: "found", label: "Encontrados", visible: true, icon: '<circle cx="12" cy="12" r="10"/><path d="M8 12.5l3 3 5-6"/>' },
+    ];
+    var filterGroup = el("div", "viewer__pin-filter");
+    filterGroup.setAttribute("role", "group");
+    filterGroup.setAttribute("aria-label", "Pines visibles");
+    var filterButtons = {};
+    FILTERS.forEach(function (item) {
+      var button = el("button", "viewer__pin-filter-btn");
+      button.type = "button";
+      button.disabled = true; // hasta que el mapa y la capa de pines estén listos
+      button.innerHTML = "<svg " + SVG_ATTRS + ">" + item.icon + SLASH + "</svg>";
+      button.appendChild(el("span", "viewer__pin-filter-text", item.label));
+      button.addEventListener("click", function () {
+        toggleFilter(item);
+      });
+      filterButtons[item.key] = button;
+      filterGroup.appendChild(button);
+    });
+
+    function renderFilter(item) {
+      var button = filterButtons[item.key];
+      button.setAttribute("aria-pressed", item.visible ? "true" : "false");
+      // toggleAttribute: los SVG no tienen la propiedad `hidden`; el CSS global [hidden] sí aplica.
+      button.querySelector(".viewer__pin-filter-slash").toggleAttribute("hidden", item.visible);
+    }
+
+    function applyFilter(item, visible) {
+      item.visible = visible;
+      renderFilter(item);
+      if (pins) {
+        if (item.key === "found") {
+          pins.setHideFound(!visible);
+        } else {
+          pins.setHidePending(!visible);
+        }
+      }
+    }
+
+    // Cambio al momento; si no se puede guardar, vuelve al estado anterior con aviso.
+    function toggleFilter(item) {
+      if (!pins) {
+        return;
+      }
+      var previous = item.visible;
+      applyFilter(item, !previous);
+      var save = item.key === "found" ? mapService.setHideFound : mapService.setHidePending;
+      save(params.id, previous).catch(function (error) {
+        if (!alive) {
+          return;
+        }
+        console.error("[viewer] No se pudo guardar el filtro:", error);
+        notice.show("No se pudo guardar el filtro.", { type: "error" });
+        applyFilter(item, previous);
+      });
+    }
+    FILTERS.forEach(renderFilter);
+    panel.appendChild(filterGroup);
     panel.appendChild(title);
 
     // Pestaña de plegado: fuera del panel, para que siga activa cuando el panel queda inert.
@@ -275,6 +346,12 @@
 
       // Pines guardados del mapa: si la carga falla, avisa y el mapa sigue abierto.
       pins = pinLayer.create(leafletMap, map);
+      // Antes de load(): los pines ocultos ni se pintan.
+      applyFilter(FILTERS[0], map.hidePending !== true);
+      applyFilter(FILTERS[1], map.hideFound !== true);
+      FILTERS.forEach(function (item) {
+        filterButtons[item.key].disabled = false;
+      });
       pins.load();
     }
 
@@ -296,6 +373,10 @@
         },
         onSaved: function (marker) {
           if (pins) {
+            // Los pines nacen pendientes: con "Pendientes" apagado el nuevo no se vería.
+            if (!FILTERS[0].visible) {
+              toggleFilter(FILTERS[0]);
+            }
             pins.add(marker);
           }
         },
@@ -312,7 +393,7 @@
     function showGame(game) {
       var block = el("div", "viewer__game");
       block.appendChild(el("p", "viewer__game-name", game.name));
-      panel.insertBefore(block, title);
+      panel.insertBefore(block, filterGroup); // los filtros van debajo del juego
     }
 
     // Selector de mapas: con 2 o más mapas en el juego, el nombre pasa a ser un botón con chevron.

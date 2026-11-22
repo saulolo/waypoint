@@ -47,6 +47,12 @@
   --pin-outline: var(--color-pin-outline-light);
 }
 
+/* Encontrado (SPEC 09): siempre translúcido, también con hover, popup abierto o arrastrando.
+   La opacidad va en el glifo (cuerpo y contorno), no en el contenedor que Leaflet coloca. */
+.pin--found .pin-glyph {
+  opacity: var(--pin-found-opacity);
+}
+
 /* --- Marcador en el mapa (L.divIcon) --- */
 
 /* Leaflet da a los divIcon fondo y borde blancos solo con .leaflet-div-icon; aquí no se usa,
@@ -147,9 +153,18 @@
   gap: var(--space-2);
 }
 
+/* Nombre + ojo; el padding derecho deja sitio a la × del popup. */
+.pin-popup__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-right: var(--space-4);
+}
+
 .pin-popup__name {
+  min-width: 0;
   margin: 0;
-  padding-right: var(--space-3); /* hueco para la × */
   color: var(--color-neon-cyan);
   font-family: var(--font-pixel);
   font-size: var(--font-size-pixel-xs);
@@ -168,7 +183,41 @@
 
 .pin-popup__actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* Botón ojo (SPEC 09): solo icono; el estado va en aria-pressed. */
+.pin-popup__found {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.pin-popup__found:hover {
+  border-color: var(--color-neon-cyan);
+  color: var(--color-neon-cyan);
+}
+
+.pin-popup__found[aria-pressed="true"] {
+  border-color: var(--color-neon-cyan);
+  color: var(--color-neon-cyan);
+}
+
+/* Contorno de foco hacia dentro, como .btn. */
+.pin-popup__found:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: -3px;
 }
 
 /* Botón pequeño: el .btn normal es de formulario y aquí sobra. */

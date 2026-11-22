@@ -1,6 +1,6 @@
 /*
- * Servicio de marcadores (pines, SPEC 08): validar, crear, listar, mover, borrar y
- * deducir el estilo del último pin guardado en un juego.
+ * Servicio de marcadores (pines, SPEC 08): validar, crear, listar, mover, marcar como
+ * encontrado (SPEC 09), borrar y deducir el estilo del último pin guardado en un juego.
  * No conoce el catálogo de iconos (es presentación, vive en js/ui/pin-icons.js):
  * solo comprueba que `icon` sea un texto no vacío. El nombre por defecto lo pone la UI.
  * No toca el DOM de la UI.
@@ -91,6 +91,7 @@
       icon: valid.icon,
       color: valid.color,
       size: valid.size,
+      found: false,
       createdAt: Date.now(),
     };
     return repository.add(marker).then(function () {
@@ -123,6 +124,26 @@
       return Promise.reject(new InvalidMarkerError("La posición debe estar entre 0 y 1."));
     }
     return repository.update(id, { x: x, y: y }).then(function (marker) {
+      if (!marker) {
+        throw new InvalidMarkerError("El pin no existe: " + id);
+      }
+      return marker;
+    });
+  }
+
+  /**
+   * Marca un pin como encontrado o pendiente (SPEC 09): solo cambia found
+   * (createdAt no cambia, así no altera "Último usado").
+   * @param {string} id
+   * @param {boolean} found
+   * @returns {Promise<object>} El marcador actualizado.
+   *   Rechaza con InvalidMarkerError (sin escribir) si found no es booleano, o si el pin no existe.
+   */
+  function setFound(id, found) {
+    if (typeof found !== "boolean") {
+      return Promise.reject(new InvalidMarkerError("found debe ser booleano."));
+    }
+    return repository.update(id, { found: found }).then(function (marker) {
       if (!marker) {
         throw new InvalidMarkerError("El pin no existe: " + id);
       }
@@ -175,6 +196,7 @@
     create: create,
     listByMap: listByMap,
     move: move,
+    setFound: setFound,
     remove: remove,
     lastStyle: lastStyle,
   };

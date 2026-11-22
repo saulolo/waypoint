@@ -153,6 +153,7 @@
   --viewer-panel-width: 260px;
   --pin-editor-width: 280px;
   --pin-picker-width: 320px;
+  --pin-found-opacity: 0.4;
 
   /* Transiciones */
   --transition-fast: 120ms ease;
