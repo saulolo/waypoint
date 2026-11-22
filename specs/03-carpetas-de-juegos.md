@@ -14,7 +14,7 @@ El usuario quiere un nivel más: el juego, con su portada, y dentro sus mapas co
 Todo mapa pertenece a un juego. No existen mapas sueltos.
 Los mapas guardados antes de esta spec se borran al actualizar: el usuario lo aceptó.
 
-Esta spec toma el número 03. Los marcadores pasan a SPEC 07, como ya hizo SPEC 02.
+Esta spec toma el número 03. Los marcadores pasan a SPEC 08, como ya hizo SPEC 02.
 
 ## Alcance
 
@@ -35,7 +35,7 @@ Esta spec toma el número 03. Los marcadores pasan a SPEC 07, como ya hizo SPEC 
 - Cargar mapas (selector y arrastrar) solo dentro de un juego.
 - Visor: "← Biblioteca" pasa a "← Mapas" y vuelve al juego del mapa.
 - Orden de juegos: último usado primero. Abrir el juego o uno de sus mapas cuenta como uso.
-- Renumerar a SPEC 07 las menciones a "SPEC 03" como marcadores.
+- Renumerar a SPEC 08 las menciones a "SPEC 03" como marcadores.
 - Adaptar `tools/acceptance/spec-01.js` y `spec-02.js` a la nueva navegación y crear `tools/acceptance/spec-03.js`.
 
 **Fuera de alcance (para specs futuras):**
@@ -50,7 +50,7 @@ Esta spec toma el número 03. Los marcadores pasan a SPEC 07, como ya hizo SPEC 
 - Recortar o encuadrar la portada a mano.
 - Datos extra del juego (plataforma, año, progreso).
 - Exportar e importar respaldos.
-- Marcadores (SPEC 07).
+- Marcadores (SPEC 08).
 
 ## Modelo de datos
 
@@ -115,12 +115,12 @@ Modificados:
 - `js/ui/viewer-view.js`: botón "← Mapas" hacia `#/game/<gameId>`.
 - `js/app.js`: `#/` → `gamesView`, `#/game/<id>` → `libraryView`, `#/map/<id>` → `viewerView`.
 - `index.html`: enlaza `games.css` y carga los scripts nuevos en orden de capa.
-- `README.md`, `CLAUDE.md`, `specs/01-biblioteca-de-mapas.md`, `specs/02-tema-arcade-retro.md`, `js/data/db.js`: renumeración de marcadores a SPEC 07, rutas y modelo.
+- `README.md`, `CLAUDE.md`, `specs/01-biblioteca-de-mapas.md`, `specs/02-tema-arcade-retro.md`, `js/data/db.js`: renumeración de marcadores a SPEC 08, rutas y modelo.
 - `tools/acceptance/spec-01.js` y `spec-02.js`: crean un juego y trabajan dentro de `#/game/<id>`.
 
 ## Plan de implementación
 
-1. Renumerar: los marcadores pasan de SPEC 03 a SPEC 07 en `README.md`, `specs/01-biblioteca-de-mapas.md`, `specs/02-tema-arcade-retro.md` y el comentario de `js/data/db.js`. Prueba manual: `grep "SPEC 03"` solo encuentra esta spec.
+1. Renumerar: los marcadores pasan de SPEC 03 a SPEC 08 en `README.md`, `specs/01-biblioteca-de-mapas.md`, `specs/02-tema-arcade-retro.md` y el comentario de `js/data/db.js`. Prueba manual: `grep "SPEC 03"` solo encuentra esta spec.
 2. Esquema v2 en `js/data/db.js`: `DB_VERSION = 2` y `MIGRATIONS[2]` (vaciar `maps`, `images`, `markers`; crear `games`; índice `gameId` en `maps`). Prueba manual: con un perfil que tenga mapas de v1, DevTools → Application muestra `games` y los tres stores vacíos.
 3. `js/data/games-repository.js` con `add`, `list`, `get`, `update`, `remove` en cascada y `countMaps`; `listByGame` en `maps-repository.js`. Cargarlo en `index.html`. Prueba manual: desde la consola, crear un juego, añadirle un mapa y borrarlo; los cuatro stores quedan vacíos.
 4. `js/services/game-service.js` y `createCover` en `image-service.js`. Validación de nombre como en los mapas. Prueba manual: desde la consola, `create("Test", file)` guarda una portada WebP de lado mayor ≤ 600 px.
@@ -198,7 +198,7 @@ Modificados:
 - **Sí:** reutilizar `library-view.js` y sus clases (`.library`, `.map-card`) para la vista de juego. La cuadrícula de mapas se ve igual y los scripts de aceptación conservan sus selectores.
 - **Sí:** nombres de juego repetidos permitidos. Igual que los mapas: el `id` identifica.
 - **Sí:** contar mapas con `index.count()`. No carga miniaturas para pintar el inicio.
-- **Sí:** esta spec es la 03 y los marcadores pasan a SPEC 07. Numeración secuencial sin huecos, como en SPEC 02.
+- **Sí:** esta spec es la 03 y los marcadores pasan a SPEC 08. Numeración secuencial sin huecos, como en SPEC 02.
 
 ## Riesgos
 
@@ -223,6 +223,6 @@ Modificados:
 - Recorte manual de la portada.
 - Datos extra del juego (plataforma, año, progreso).
 - Exportar e importar respaldos.
-- Marcadores (SPEC 07).
+- Marcadores (SPEC 08).
 
 Cada una de estas, si llega, va en su propia spec.

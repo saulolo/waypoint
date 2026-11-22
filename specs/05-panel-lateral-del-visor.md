@@ -12,9 +12,9 @@ Esa barra resta alto al mapa en todo momento.
 El usuario quiere el patrón de MapGenie: un panel a la izquierda que se pliega con una pestaña y deja el mapa entero a la vista.
 
 El panel nace con poco contenido (volver, juego y mapa).
-Es el sitio donde SPEC 07 pondrá los filtros y listas de marcadores.
+Es el sitio donde SPEC 08 pondrá los filtros y listas de marcadores.
 
-Esta spec toma el número 05. Los marcadores pasan a SPEC 07, como ya hicieron SPEC 02, 03 y 04.
+Esta spec toma el número 05. Los marcadores pasan a SPEC 08, como ya hicieron SPEC 02, 03 y 04.
 
 ## Alcance
 
@@ -36,7 +36,7 @@ Esta spec toma el número 05. Los marcadores pasan a SPEC 07, como ya hicieron S
 - La vista inicial "mapa entero visible" sigue ajustada a la ventana completa: con el panel expandido, la parte izquierda de la imagen queda debajo del panel.
 - Los botones + / − siguen abajo a la derecha.
 - Mientras carga, el panel ya se ve con "← Mapas" y "Cargando…" como nombre del mapa.
-- Renumerar a SPEC 07 las menciones a "SPEC 05" como marcadores.
+- Renumerar a SPEC 08 las menciones a "SPEC 05" como marcadores.
 - Adaptar los tests de aceptación que dependan de la barra y crear `tools/acceptance/spec-05.js`.
 
 **Fuera de alcance (para specs futuras):**
@@ -49,7 +49,7 @@ Esta spec toma el número 05. Los marcadores pasan a SPEC 07, como ya hicieron S
 - Ancho del panel ajustable arrastrando su borde.
 - Reajustar el zoom o mover la imagen al expandir o contraer.
 - Buscador, filtros, categorías o contadores (llegan con los marcadores).
-- Marcadores (SPEC 07).
+- Marcadores (SPEC 08).
 
 ## Modelo de datos
 
@@ -82,15 +82,15 @@ Modificados:
 - `css/viewer.css`: quita `.viewer__bar`; estilos de `.viewer__panel`, `.viewer__toggle`, bloque del juego y estado contraído (`.viewer--panel-collapsed`); transición anulada con `prefers-reduced-motion: reduce`.
 - `css/tokens.css`: `--viewer-panel-width`.
 - `tools/acceptance/spec-01.js`, `spec-02.js`, `spec-03.js`, `spec-04.js`: solo si algún criterio depende de la barra superior o del alto del escenario.
-- `README.md`: el visor tiene panel lateral plegable; marcadores en SPEC 07.
+- `README.md`: el visor tiene panel lateral plegable; marcadores en SPEC 08.
 - `CLAUDE.md`: el visor usa panel lateral, no barra.
-- `specs/01-biblioteca-de-mapas.md`, `specs/02-tema-arcade-retro.md`, `specs/03-carpetas-de-juegos.md`, `specs/04-zoom-fluido.md`, `js/data/db.js`: renumeración de marcadores a SPEC 07.
+- `specs/01-biblioteca-de-mapas.md`, `specs/02-tema-arcade-retro.md`, `specs/03-carpetas-de-juegos.md`, `specs/04-zoom-fluido.md`, `js/data/db.js`: renumeración de marcadores a SPEC 08.
 
 `index.html` no cambia: `game-service.js` ya se carga antes de `viewer-view.js`.
 
 ## Plan de implementación
 
-1. Renumerar: los marcadores pasan de SPEC 05 a SPEC 07 en `README.md`, `specs/01-*` a `specs/04-*` y el comentario de `js/data/db.js`. Prueba manual: `grep "SPEC 05"` solo encuentra esta spec.
+1. Renumerar: los marcadores pasan de SPEC 05 a SPEC 08 en `README.md`, `specs/01-*` a `specs/04-*` y el comentario de `js/data/db.js`. Prueba manual: `grep "SPEC 05"` solo encuentra esta spec.
 2. Panel en lugar de barra: en `viewer-view.js`, `.viewer__panel` con "← Mapas" y `.viewer__title`; `.viewer__stage` a pantalla completa con el panel superpuesto (`position: absolute`, `z-index` sobre Leaflet). Token `--viewer-panel-width`. Prueba manual: el mapa llena la ventana, el panel queda encima a la izquierda y "← Mapas" vuelve al juego.
 3. Bloque del juego: `gameService.get(map.gameId)`, portada pequeña con object URL (revocado al desmontar) o `.game-placeholder`, y nombre del juego en pixel. Si falla, sin bloque. Prueba manual: se ven portada y nombre; con un juego sin portada, la inicial.
 4. Pestaña y plegado: `.viewer__toggle` con ◀ / ▶, `aria-expanded`, `aria-controls`, `aria-label`; clase `.viewer--panel-collapsed` que desplaza el panel con `transform` y 200 ms de transición; `inert` en el contenido contraído; transición anulada con movimiento reducido. Prueba manual: la pestaña pliega y despliega; contraído solo queda la pestaña en el borde.
@@ -142,7 +142,7 @@ Modificados:
 - **Sí:** portada y nombre del juego solo informativos. "← Mapas" ya vuelve al juego. Decisión del usuario.
 - **Sí:** sin trato especial en ventanas estrechas. La app apunta a escritorio Chrome/Edge. Decisión del usuario.
 - **Sí:** mantener las clases `.viewer__back`, `.viewer__title` y `.viewer__stage`. Los tests de SPEC 01 a 04 las usan.
-- **Sí:** esta spec es la 05 y los marcadores pasan a SPEC 07. Numeración secuencial sin huecos, como en SPEC 02, 03 y 04.
+- **Sí:** esta spec es la 05 y los marcadores pasan a SPEC 08. Numeración secuencial sin huecos, como en SPEC 02, 03 y 04.
 
 ## Riesgos
 
@@ -162,6 +162,6 @@ Modificados:
 - Panel para móvil o ancho ajustable.
 - Reajuste del zoom al plegar.
 - Buscador, filtros y categorías.
-- Marcadores (SPEC 07).
+- Marcadores (SPEC 08).
 
 Cada una de estas, si llega, va en su propia spec.

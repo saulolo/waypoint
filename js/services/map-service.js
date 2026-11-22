@@ -52,20 +52,9 @@
     return base.slice(0, NAME_MAX_LENGTH).trim() || DEFAULT_NAME;
   }
 
-  /**
-   * Orden de la biblioteca: lastOpenedAt descendente; los nunca abiertos después,
-   * por createdAt descendente.
-   */
-  function compareForLibrary(a, b) {
-    var aOpened = a.lastOpenedAt != null;
-    var bOpened = b.lastOpenedAt != null;
-    if (aOpened && bOpened) {
-      return b.lastOpenedAt - a.lastOpenedAt;
-    }
-    if (aOpened !== bOpened) {
-      return aOpened ? -1 : 1;
-    }
-    return b.createdAt - a.createdAt;
+  /** Orden alfabético por nombre (localeCompare, sensitivity "base": sin distinguir mayúsculas ni acentos). */
+  function compareByName(a, b) {
+    return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
   }
 
   function importOne(gameId, file, info) {
@@ -162,12 +151,20 @@
 
   /**
    * @param {string} gameId
-   * @returns {Promise<object[]>} Mapas del juego en el orden de la biblioteca.
+   * @returns {Promise<object[]>} Mapas del juego en el orden de la biblioteca (alfabético por nombre).
    */
   function listSorted(gameId) {
     return repository.listByGame(gameId).then(function (maps) {
-      return maps.sort(compareForLibrary);
+      return maps.sort(compareByName);
     });
+  }
+
+  /**
+   * @param {string} gameId
+   * @returns {Promise<object[]>} Mapas del juego ordenados por nombre; el mismo orden que la biblioteca.
+   */
+  function listByName(gameId) {
+    return listSorted(gameId);
   }
 
   /**
@@ -237,6 +234,7 @@
     normalizeName: normalizeName,
     importFiles: importFiles,
     listSorted: listSorted,
+    listByName: listByName,
     rename: rename,
     remove: remove,
     open: open,

@@ -180,13 +180,14 @@
   $(".viewer__back").click();
   await waitFor(() => names().length === 5); await sleep(300);
   const backBtn = window.location.hash === gameHash && !$(".leaflet-container");
-  // 8. El abierto pasa primero
-  ok("08_opened_goes_first", names()[0] === "Lapis Renombrado", names());
+  // 8. Orden alfabético por nombre, sin importar cuál se abrió último
+  const alphabetical = (list) => list.join("|") === [...list].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })).join("|");
+  ok("08_alphabetical_order", alphabetical(names()), names());
   card("Mondstadt").querySelector("a").click();
   await waitFor(() => !!$(".leaflet-image-layer")); await sleep(300);
   history.back();
   await waitFor(() => names().length === 5); await sleep(300);
-  ok("18_back_and_browser_back", backBtn && window.location.hash === gameHash && names()[0] === "Mondstadt");
+  ok("18_back_and_browser_back", backBtn && window.location.hash === gameHash && alphabetical(names()));
 
   // 20. #/map/no-existe (vuelve al inicio de juegos)
   clearNotices();

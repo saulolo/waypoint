@@ -1,6 +1,6 @@
 /*
  * Controles del visor (SPEC 06): añadir pin (solo el botón; la acción llega con los marcadores,
- * SPEC 07), pantalla completa y un botón de escala que alterna entre tamaño real (1:1) y ajustar
+ * SPEC 08), pantalla completa y un botón de escala que alterna entre tamaño real (1:1) y ajustar
  * a la ventana. Tres botones separados, cada uno en su propia caja.
  * Es un L.Control en la
  * esquina inferior derecha; viewer-view.js lo añade después del de zoom, porque en las esquinas
@@ -64,7 +64,7 @@
   /**
    * Crea el control. Hay que añadirlo al mapa con control.addTo(map).
    * @param {{ onToggleFullscreen: function, onFit: function, onActualSize: function, onAddPin?: function }} handlers
-   *   onAddPin es opcional: sin él, el botón de pin no hace nada (SPEC 07 lo conecta).
+   *   onAddPin es opcional: sin él, el botón de pin no hace nada (SPEC 08 lo conecta).
    * @returns {L.Control} con setFullscreen(isFullscreen)
    */
   function create(handlers) {

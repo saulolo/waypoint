@@ -82,9 +82,6 @@
     && panel().contains($(".viewer__back")) && panel().contains(gameName) && panel().contains(title),
     { back: $(".viewer__back")?.textContent, game: gameName?.textContent, map: title.textContent, fonts: [css(gameName).fontFamily, css(title).fontFamily] });
 
-  const coverImg = $(".viewer__game img");
-  const coverOk = !!coverImg && coverImg.src.startsWith("blob:") && coverImg.complete && coverImg.naturalWidth > 0;
-
   ok("08_toggle_expanded_aria", toggle().getAttribute("aria-expanded") === "true" && toggle().getAttribute("aria-label") === "Contraer panel"
     && toggle().getAttribute("aria-controls") === panel().id && !panel().inert,
     { expanded: toggle().getAttribute("aria-expanded"), label: toggle().getAttribute("aria-label") });
@@ -160,15 +157,15 @@
   await openViewer(mapA); // se monta un visor nuevo: tiene que empezar expandido
   const freshExpanded = toggle().getAttribute("aria-expanded") === "true" && Math.abs(pr().left) <= 1;
   window.location.hash = "#/game/" + withCover.id; await sleep(500);
-  ok("17_reopen_expanded_and_revoked", viewerUrls.length === 2 && leftAlive.length === 0 && freshExpanded,
+  ok("17_reopen_expanded_and_revoked", viewerUrls.length === 1 && leftAlive.length === 0 && freshExpanded,
     { viewerUrls: viewerUrls.length, leftAlive: leftAlive.length, freshExpanded });
 
   // 06. Portada (mapa A) e inicial (mapa C, juego sin portada)
   await openViewer(mapC);
   await waitFor(() => !!$(".viewer__game"));
-  const ph = $(".viewer__game .game-placeholder");
-  ok("06_cover_or_initial", coverOk && !!ph && ph.textContent === "S" && !$(".viewer__game img"),
-    { cover: coverOk, placeholder: ph?.textContent });
+  // La portada ya no se muestra en el panel (SPEC 07): solo el nombre del juego
+  ok("06_no_cover_in_panel", !$(".viewer__game img") && !$(".viewer__game .game-placeholder") && !$(".viewer__game-cover") && $(".viewer__game-name")?.textContent === "sin portada",
+    { name: $(".viewer__game-name")?.textContent });
 
   // 18. Si gameService.get falla, el mapa se abre igual
   window.location.hash = "#/"; await sleep(400);

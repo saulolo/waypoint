@@ -11,7 +11,7 @@ Hoy el visor solo tiene + / − abajo a la derecha.
 El usuario quiere el patrón de MapGenie: un botón de pantalla completa encima del zoom, y otros botones laterales de vista.
 "Ajustar a la ventana" quedó fuera de alcance en SPEC 04; entra aquí.
 
-Esta spec toma el número 06. Los marcadores pasan a SPEC 07, como ya hicieron SPEC 02, 03, 04 y 05.
+Esta spec toma el número 06. Los marcadores pasan a SPEC 08, como ya hicieron SPEC 02, 03, 04 y 05.
 
 ## Alcance
 
@@ -21,7 +21,7 @@ Esta spec toma el número 06. Los marcadores pasan a SPEC 07, como ya hicieron S
   1. **Añadir pin.**
   2. **Pantalla completa.**
   3. **Escala:** un solo botón que alterna entre tamaño real (1:1) y ajustar a la ventana.
-- **Añadir pin:** solo el botón, **sin acción**. La funcionalidad (colocar pines personalizados) llega con los marcadores en SPEC 07.
+- **Añadir pin:** solo el botón, **sin acción**. La funcionalidad (colocar pines personalizados) llega con los marcadores en SPEC 08.
   - Icono SVG inline: pin de mapa con un punto central y un "+" arriba a la derecha. Color con `currentColor`.
   - `aria-label` y `title`: "Añadir pin".
   - El control acepta un callback opcional `onAddPin`; sin él, el clic no hace nada.
@@ -52,7 +52,7 @@ Esta spec toma el número 06. Los marcadores pasan a SPEC 07, como ya hicieron S
 - Los tres son `<button>` con foco visible (contorno hacia dentro, como `.btn`).
 - Los clics y la rueda sobre el bloque no llegan al mapa (no hacen zoom ni arrastre).
 - El bloque se crea en un archivo nuevo `js/ui/view-controls.js`, como un `L.Control` en `bottomright` añadido después que el de zoom (en las esquinas de abajo Leaflet apila el último añadido arriba).
-- Renumerar a SPEC 07 las menciones a "SPEC 06" como marcadores.
+- Renumerar a SPEC 08 las menciones a "SPEC 06" como marcadores.
 - Crear `tools/acceptance/spec-06.js`.
 
 **Fuera de alcance (para specs futuras):**
@@ -61,11 +61,11 @@ Esta spec toma el número 06. Los marcadores pasan a SPEC 07, como ya hicieron S
 - Otros botones laterales (capas, medir, compartir, etc.).
 - Mostrar el panel lateral dentro de pantalla completa.
 - Indicador del nivel de zoom o del porcentaje.
-- Acción del botón de añadir pin y cualquier marcador (SPEC 07).
+- Acción del botón de añadir pin y cualquier marcador (SPEC 08).
 - Deshabilitar el botón de escala o recordar la última acción pulsada: su estado sale del zoom actual.
 - Recordar la pantalla completa entre mapas o aperturas.
 - Pantalla completa fuera del visor (inicio o biblioteca).
-- Marcadores (SPEC 07).
+- Marcadores (SPEC 08).
 
 ## Modelo de datos
 
@@ -86,7 +86,7 @@ viewControls.create({
   onFit: function () {},
   onActualSize: function () {},
 });
-// handlers.onAddPin es opcional: sin él, el botón de pin no hace nada (SPEC 07 lo conecta).
+// handlers.onAddPin es opcional: sin él, el botón de pin no hace nada (SPEC 08 lo conecta).
 // control.setFullscreen(isFullscreen) cambia icono, aria-label y title del primer botón.
 // control.setActualSize(isActualSize) cambia forma, aria-label y title del botón de escala.
 ```
@@ -106,13 +106,13 @@ Modificados:
 - `js/ui/viewer-view.js`: añade el control; implementa ajustar (reutiliza `fitZoom`), 1:1 y pantalla completa, y sincroniza el botón de escala en `zoomend`; escucha `fullscreenchange` y lo quita al desmontar; sale de pantalla completa al desmontar; clase `.viewer--fullscreen`.
 - `css/viewer.css`: estilos del bloque y sus iconos; `.viewer--fullscreen` oculta panel y pestaña.
 - `index.html`: `js/ui/view-controls.js` antes de `js/ui/viewer-view.js`.
-- `README.md`: botones de vista; marcadores en SPEC 07.
+- `README.md`: botones de vista; marcadores en SPEC 08.
 - `CLAUDE.md`: `view-controls.js`, pantalla completa sobre `documentElement` y cómo probarla.
-- `specs/01-*` a `specs/05-*` y `js/data/db.js`: renumeración de marcadores a SPEC 07.
+- `specs/01-*` a `specs/05-*` y `js/data/db.js`: renumeración de marcadores a SPEC 08.
 
 ## Plan de implementación
 
-1. Renumerar: los marcadores pasan de SPEC 06 a SPEC 07 en `README.md`, `specs/01-*` a `specs/05-*` y el comentario de `js/data/db.js`. Prueba manual: `grep "SPEC 06"` solo encuentra esta spec.
+1. Renumerar: los marcadores pasan de SPEC 06 a SPEC 08 en `README.md`, `specs/01-*` a `specs/05-*` y el comentario de `js/data/db.js`. Prueba manual: `grep "SPEC 06"` solo encuentra esta spec.
 2. Bloque de controles: crear `js/ui/view-controls.js` con los botones (el de pin sin acción) (iconos, `aria-label`, `title`) sin acciones, cargarlo en `index.html` y añadirlo en `viewer-view.js` encima de + / −. Estilos en `viewer.css`. Prueba manual: el bloque se ve encima de + / −, separado, con el estilo arcade; clic y rueda sobre él no mueven el mapa.
 3. Ajustar a la ventana: `onFit` hace `setView(centro de la imagen, fitZoom(bounds))` animado (sin animación con movimiento reducido). Prueba manual: tras hacer zoom y arrastrar, el botón deja el mapa entero visible y centrado.
 4. Tamaño real: `onActualSize` hace `setZoom` a 0 limitado a `[minZoom, MAX_ZOOM]`, manteniendo el centro. Prueba manual: la imagen se ve a 1 px por px y el punto central no cambia.
@@ -170,7 +170,7 @@ Modificados:
 - **Sí:** "1:1" como texto pixel en lugar de icono. Se lee sin ambigüedad.
 - **Sí:** sin atajo de teclado. Coherente con SPEC 05. Decisión del usuario.
 - **Sí:** control en archivo propio (`view-controls.js`). `viewer-view.js` ya es largo y el control es una pieza aislada.
-- **Sí:** esta spec es la 06 y los marcadores pasan a SPEC 07. Numeración secuencial sin huecos, como en SPEC 02 a 05.
+- **Sí:** esta spec es la 06 y los marcadores pasan a SPEC 08. Numeración secuencial sin huecos, como en SPEC 02 a 05.
 
 ## Riesgos
 
@@ -191,6 +191,6 @@ Modificados:
 - Panel lateral dentro de pantalla completa.
 - Indicador de zoom o botones deshabilitados según la vista.
 - Pantalla completa fuera del visor o recordada entre aperturas.
-- Marcadores y la acción del botón de pin (SPEC 07).
+- Marcadores y la acción del botón de pin (SPEC 08).
 
 Cada una de estas, si llega, va en su propia spec.
