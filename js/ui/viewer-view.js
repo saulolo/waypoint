@@ -5,7 +5,7 @@
  * "← Mapas", el nombre del juego (si se pudo leer) y el nombre del mapa; con 2 o más mapas en el
  * juego, el nombre del mapa es un desplegable (selector) con los mapas del juego, en orden alfabético. Es hermano
  * del escenario, no hijo del contenedor de Leaflet: superponerlo no redimensiona el mapa.
- * La pestaña .viewer__toggle lo pliega y despliega (siempre empieza expandido; no se guarda).
+ * La pestaña .viewer__toggle lo pliega y despliega (siempre empieza contraído; no se guarda).
  * Contraído, el panel sale por la izquierda y queda inert; la pestaña, fuera de él, queda en el borde.
  *
  * La imagen ocupa los bounds [[0, 0], [height, width]]: 1 unidad = 1 px de la imagen a zoom 0.
@@ -19,7 +19,10 @@
  *     quedan siempre al menos MIN_VISIBLE_PX de ella dentro, para no perderla de vista.
  *   - Pantalla completa (botón de view-controls): Fullscreen API sobre <html>; en ella solo se ve el
  *     mapa y los controles (.viewer--fullscreen oculta el panel y su pestaña).
+ *   - Pines (SPEC 08): al crear el mapa, Waypoint.ui.pinLayer pinta los pines guardados. El botón
+ *     "Añadir pin" abre Waypoint.ui.pinEditor (panel derecho y borrador; .viewer--adding-pin).
  * Al salir se quitan el handler de rueda y el de fullscreenchange, se sale de pantalla completa,
+ * se cancela el panel de pin si está abierto, se destruye la capa de pines,
  * se quita el listener de pointerdown del selector, se destruye el mapa Leaflet y se revocan los
  * object URLs de la imagen y de las miniaturas del selector.
  *
@@ -34,6 +37,8 @@
   var router = Waypoint.core.router;
   var wheelZoom = Waypoint.ui.wheelZoom;
   var viewControls = Waypoint.ui.viewControls;
+  var pinLayer = Waypoint.ui.pinLayer;
+  var pinEditor = Waypoint.ui.pinEditor;
 
   var MAX_ZOOM = 2; // 2^2 = 4× el tamaño real
   var MIN_ZOOM_BELOW_FIT = 2; // zoom mínimo = fitZoom − 2 → 1/4 del tamaño de ajuste
@@ -73,6 +78,8 @@
     var imageUrl = null;
     var detachWheel = null;
     var controls = null; // L.Control de vista (pantalla completa, ajustar, 1:1)
+    var pins = null; // capa de pines guardados (pin-layer.js)
+    var closeEditor = null; // cierre del modo "añadir pin" mientras está abierto (pin-editor.js)
 
     var root = el("section", "viewer");
     root.setAttribute("aria-label", "Visor de mapa");
@@ -98,8 +105,9 @@
     toggle.type = "button";
     toggle.setAttribute("aria-controls", panel.id);
 
-    // Siempre expandido al montar; el estado no se guarda.
-    var panelExpanded = true;
+    // Siempre contraído al montar (desde SPEC 08; antes expandido); el estado no se guarda.
+    // La clase se pone antes de insertar el panel: no hay transición al abrir.
+    var panelExpanded = false;
 
     function renderPanelState() {
       root.classList.toggle("viewer--panel-collapsed", !panelExpanded);
@@ -214,6 +222,9 @@
       //
       controls = viewControls
         .create({
+          onAddPin: function () {
+            openPinEditor(map);
+          },
           onToggleFullscreen: toggleFullscreen,
           onFit: function () {
             // Vista inicial: mapa entero visible y centrado, con el ajuste para la ventana de ahora.
@@ -260,6 +271,40 @@
           leafletMap.setZoom(newMin, { animate: false });
         }
         updateMaxBounds(bounds);
+      });
+
+      // Pines guardados del mapa: si la carga falla, avisa y el mapa sigue abierto.
+      pins = pinLayer.create(leafletMap, map);
+      pins.load();
+    }
+
+    // Modo "añadir pin": panel derecho y borrador. Los controles de la esquina se ocultan mientras
+    // dura (.viewer--adding-pin); al cancelar vuelven y el foco regresa al botón "Añadir pin".
+    function openPinEditor(map) {
+      if (closeEditor) {
+        return;
+      }
+      closeEditor = pinEditor.open({
+        root: root,
+        leafletMap: leafletMap,
+        map: map,
+        pins: pins,
+        // El panel izquierdo tapa el mapa solo si está expandido y fuera de pantalla completa.
+        freeLeft: function () {
+          var hidden = !panelExpanded || root.classList.contains("viewer--fullscreen");
+          return hidden ? 0 : panel.offsetWidth;
+        },
+        onSaved: function (marker) {
+          if (pins) {
+            pins.add(marker);
+          }
+        },
+        onClose: function (reason) {
+          closeEditor = null;
+          if (reason !== "unmount" && controls) {
+            controls.focusAddPin();
+          }
+        },
       });
     }
 
@@ -470,6 +515,15 @@
       if (detachWheel) {
         detachWheel();
         detachWheel = null;
+      }
+      // Cambiar de ruta con el panel de pin abierto cancela sin preguntar.
+      if (closeEditor) {
+        closeEditor();
+        closeEditor = null;
+      }
+      if (pins) {
+        pins.destroy();
+        pins = null;
       }
       if (leafletMap) {
         leafletMap.remove();

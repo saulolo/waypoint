@@ -151,6 +151,26 @@
   }
 }
 
+/* Caída del pin borrador (SPEC 08): desde --pin-drop-from (borde superior del mapa) hasta su
+   sitio, con un rebote leve al final. */
+@keyframes pin-drop {
+  0% {
+    transform: translateY(var(--pin-drop-from, -200px));
+    animation-timing-function: ease-in;
+  }
+  70% {
+    transform: translateY(0);
+    animation-timing-function: ease-out;
+  }
+  85% {
+    transform: translateY(-12%);
+    animation-timing-function: ease-in;
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
 /* ---------- Movimiento reducido ---------- */
 
 @media (prefers-reduced-motion: reduce) {

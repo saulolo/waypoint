@@ -22,7 +22,7 @@ Esta spec toma el número 05. Los marcadores pasan a SPEC 08, como ya hicieron S
 
 - Quitar la barra superior del visor (`.viewer__bar`).
 - El escenario del mapa (`.viewer__stage`) ocupa toda la ventana.
-- Panel lateral izquierdo de 320 px, superpuesto al mapa (no lo empuja ni redimensiona Leaflet).
+- Panel lateral izquierdo de 320 px (260 px desde SPEC 08), superpuesto al mapa (no lo empuja ni redimensiona Leaflet).
 - Contenido del panel, de arriba abajo:
   - Botón "← Mapas" (vuelve a `#/game/<gameId>`, como hoy).
   - Portada pequeña del juego (o el placeholder `.game-placeholder` con la inicial si no tiene) y su nombre en pixel. Solo informativo: no es enlace.
@@ -30,7 +30,7 @@ Esta spec toma el número 05. Los marcadores pasan a SPEC 08, como ya hicieron S
 - Botón pestaña pegado al borde derecho del panel, arriba: "◀" con el panel expandido, "▶" con el panel contraído.
 - Contraído: el panel sale por la izquierda y solo queda la pestaña en el borde izquierdo de la ventana.
 - Expandir y contraer con una transición de deslizamiento de 200 ms. Con `prefers-reduced-motion: reduce`, sin transición.
-- Al abrir un mapa, el panel siempre empieza expandido. No se guarda el estado.
+- Al abrir un mapa, el panel siempre empieza expandido (contraído desde SPEC 08). No se guarda el estado.
 - Accesibilidad: la pestaña es un `<button>` con `aria-expanded`, `aria-controls` y `aria-label` "Contraer panel" / "Expandir panel". Con el panel contraído, su contenido no recibe foco (`inert`).
 - La rueda y el arrastre sobre el panel no mueven el mapa.
 - La vista inicial "mapa entero visible" sigue ajustada a la ventana completa: con el panel expandido, la parte izquierda de la imagen queda debajo del panel.
