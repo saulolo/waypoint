@@ -141,6 +141,58 @@ body.is-viewer {
   overflow-wrap: anywhere;
 }
 
+/* Filtro de pines (SPEC 09): dos botones ojo en fila, icono arriba y texto debajo */
+.viewer__pin-filter {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.viewer__pin-filter-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-2) var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+}
+
+.viewer__pin-filter-btn svg {
+  flex: none;
+}
+
+.viewer__pin-filter-btn:hover {
+  border-color: var(--color-text-muted);
+  color: var(--color-text);
+}
+
+/* Se ven los pines de ese tipo (ojo abierto): resaltado. Apagado (ojo tachado): atenuado. */
+.viewer__pin-filter-btn[aria-pressed="true"] {
+  border-color: var(--color-neon-cyan);
+  background: var(--color-surface);
+  color: var(--color-neon-cyan);
+}
+
+.viewer__pin-filter-btn:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: -3px;
+}
+
+.viewer__pin-filter-btn:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
 /* Nombre en pixel; los largos parten en varias líneas */
 .viewer__title {
   max-width: 100%;

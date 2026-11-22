@@ -168,8 +168,8 @@
   const pr = picker().getBoundingClientRect(), er = editor().getBoundingClientRect();
   const cats = $$(".pin-picker__category").map((c) => ({ label: c.querySelector(".pin-picker__toggle").textContent, n: c.querySelectorAll(".pin-picker__radio").length }));
   const allLabels = $$(".pin-picker__label").map((l) => l.textContent.trim());
-  ok("13_picker_layout", !picker().hidden && pr.right <= er.left && cats.map((c) => c.label).join("|") === "Localizaciones|Enemigos|Tesoros|Equipo|Misiones|Información|Viaje"
-    && cats.map((c) => c.n).join(",") === "9,8,7,6,6,8,9" && allLabels.length === 53 && allLabels.every(Boolean),
+  ok("13_picker_layout", !picker().hidden && pr.right <= er.left && cats.map((c) => c.label).join("|") === "Por defecto|Localizaciones|Enemigos|Tesoros|Equipo|Misiones|Información|Viaje"
+    && cats.map((c) => c.n).join(",") === "1,9,8,7,6,6,8,9" && allLabels.length === 54 && allLabels.every(Boolean),
     { gap: er.left - pr.right, cats });
   const ids = icons.CATEGORIES.flatMap((c) => c.icons.map((i) => i.id));
   ok("14_icon_names", icons.label("shop") === "Compras" && icons.label("quest") === "Misión principal"

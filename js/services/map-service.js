@@ -190,6 +190,47 @@
   }
 
   /**
+   * Guarda la preferencia "Ocultar encontrados" del mapa (SPEC 09).
+   * Es una preferencia de vista: no toca updatedAt ni lastOpenedAt.
+   * @param {string} id
+   * @param {boolean} hideFound
+   * @returns {Promise<object>} El mapa actualizado.
+   *   Rechaza con MapNotFoundError, o con TypeError si hideFound no es booleano (sin escribir).
+   */
+  function setHideFound(id, hideFound) {
+    if (typeof hideFound !== "boolean") {
+      return Promise.reject(new TypeError("hideFound debe ser booleano."));
+    }
+    var changes = { hideFound: hideFound };
+    return repository.update(id, changes).then(function (map) {
+      if (!map) {
+        throw new MapNotFoundError(id);
+      }
+      return map;
+    });
+  }
+
+  /**
+   * Guarda "Ocultar pendientes" del mapa: el visor no pinta los pines sin encontrar. Independiente de
+   * hideFound (con los dos activos no queda ningún pin). Como setHideFound, no toca updatedAt.
+   * @param {string} id
+   * @param {boolean} hidePending
+   * @returns {Promise<object>} El mapa actualizado.
+   *   Rechaza con MapNotFoundError, o con TypeError si hidePending no es booleano (sin escribir).
+   */
+  function setHidePending(id, hidePending) {
+    if (typeof hidePending !== "boolean") {
+      return Promise.reject(new TypeError("hidePending debe ser booleano."));
+    }
+    return repository.update(id, { hidePending: hidePending }).then(function (map) {
+      if (!map) {
+        throw new MapNotFoundError(id);
+      }
+      return map;
+    });
+  }
+
+  /**
    * Borra un mapa con su imagen y sus marcadores.
    * @param {string} id
    * @returns {Promise<void>}
@@ -236,6 +277,8 @@
     listSorted: listSorted,
     listByName: listByName,
     rename: rename,
+    setHideFound: setHideFound,
+    setHidePending: setHidePending,
     remove: remove,
     open: open,
   };

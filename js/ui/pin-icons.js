@@ -1,5 +1,5 @@
 /*
- * Catálogo de iconos de pin (SPEC 08): 7 categorías y 53 iconos, con etiqueta y glifo SVG propio.
+ * Catálogo de iconos de pin (SPEC 08, más "Por defecto" de SPEC 09): 8 categorías y 54 iconos, con etiqueta y glifo SVG propio.
  * Dibujados para Waypoint (silueta sencilla, legible a 20 px); no se copian de ningún otro sitio.
  *
  *   pinIcons.CATEGORIES      [{ id, label, icons: [{ id, label }] }]
@@ -20,6 +20,11 @@
   var FALLBACK = "question";
 
   var CATEGORIES = [
+    {
+      id: "default",
+      label: "Por defecto",
+      icons: [{ id: "pointer", label: "Por defecto" }],
+    },
     {
       id: "locations",
       label: "Localizaciones",
@@ -119,6 +124,18 @@
 
   // Glifos: { body: string | string[], detail?: string }, uno por icono del catálogo.
   var GLYPHS = {
+    /* --- Por defecto --- */
+
+    // Guante que señala a la derecha: puño compacto con el índice largo y fino extendido, dos dedos
+    // doblados debajo y el puño de la manga con su raya.
+    pointer: {
+      body: [
+        "M4.5 9.1V8.6a1.8 1.8 0 0 1 1.8-1.8h14.9a1.8 1.8 0 0 1 0 3.6h-6.4a1.7 1.7 0 0 1 0 3.4H14a1.7 1.7 0 0 1 0 3.4H4.5z",
+        "M1 7.8a1 1 0 0 1 1-1h2.5v10.4H2a1 1 0 0 1-1-1z",
+      ],
+      detail: "M2.6 9h.9v6.4h-.9z",
+    },
+
     /* --- Localizaciones --- */
 
     // Montaña de roca con la boca de la cueva.
