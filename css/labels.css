@@ -79,8 +79,24 @@
   padding-right: var(--space-4); /* sitio para la × del popup */
 }
 
-.label-popup .label-popup__actions {
-  justify-content: flex-end;
+/* "Editar" y "Borrar" (SPEC 11) se reparten como en el pin: .pin-popup__actions (space-between). */
+
+/* --- Tooltip con la nota (SPEC 11; estilo de .pin-tooltip) --- */
+
+/* La nota se ve tal cual, con sus saltos de línea; Leaflet pone white-space: nowrap.
+   width: max-content: el pane de Leaflet mide 0 px, y sin esto el tooltip se encoge a un carácter
+   por línea (con overflow-wrap: anywhere); max-width corta las líneas largas. */
+.leaflet-tooltip.label-tooltip {
+  width: max-content;
+  max-width: var(--label-tooltip-width);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* En los modos de añadir y editar, los textos guardados no muestran su nota. */
+.viewer--adding-pin .label-tooltip,
+.viewer--adding-label .label-tooltip {
+  display: none;
 }
 
 /* --- Panel de texto (no modal; estilo de .dialog, ancho de .pin-editor) --- */

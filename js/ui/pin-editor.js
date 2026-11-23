@@ -1,5 +1,5 @@
 /*
- * Modo "añadir pin" del visor (SPEC 08): panel de pin y pin borrador.
+ * Modos "añadir pin" (SPEC 08) y "editar pin" (SPEC 11) del visor: panel de pin y pin borrador.
  *
  *   var close = Waypoint.ui.pinEditor.open({
  *     root,        // .viewer: los paneles se cuelgan de él, como hermanos de .viewer__stage
@@ -8,7 +8,8 @@
  *     freeLeft,    // () → px que tapa el panel izquierdo (0 si está contraído u oculto)
  *     pins,        // capa de pines guardados (pinLayer): modo "añadir pin" con setPlacing
  *     labels,      // capa de textos guardados (labelLayer, SPEC 10): también en modo colocar
- *     onSaved,     // (marker) → el visor lo añade a la capa de pines guardados
+ *     marker,      // opcional (SPEC 11): pin guardado a editar → modo "editar pin"
+ *     onSaved,     // (marker) → el visor lo añade a la capa de pines guardados (o lo repinta al editar)
  *     onClose,     // (reason: "save" | "cancel" | "unmount") → el visor devuelve el foco
  *   });
  *   close();       // cancela sin avisar (desmontaje del visor)
@@ -39,6 +40,12 @@
  * el visor lo pinte como pin guardado y cierra. Si falla, avisa y paneles y borrador siguen.
  *
  * Cancelar (botón, Esc o desmontaje) quita borrador, paneles y listeners; no se guarda nada.
+ *
+ * Modo "editar pin" (SPEC 11, opción `marker`): título "Editar pin", campos con los valores del pin
+ * (nombre tal cual, aunque sea la etiqueta del icono) y el borrador en su sitio, con su estilo y
+ * .pin--found si está encontrado, sin caída ni findFreeSpot. "Último usado" funciona igual.
+ * "Guardar" llama a markerService.update (siempre habilitado; sin cambios escribe igual). Quitar
+ * el pin guardado del mapa y devolverlo al cerrar es cosa del visor (pins.startEditing / stopEditing).
  * Nunca accede a IndexedDB.
  */
 (function (Waypoint) {
@@ -96,6 +103,8 @@
     var map = options.map;
     var uid = ++idCounter;
     var closed = false;
+    // Modo "editar pin" (SPEC 11): el pin guardado que se edita; null al añadir.
+    var editing = options.marker || null;
 
     var style = {
       icon: markerService.DEFAULT_STYLE.icon,
@@ -113,7 +122,7 @@
     var body = el("div", "dialog__form pin-editor__body");
     panel.appendChild(body);
 
-    var heading = el("h2", "dialog__title pin-editor__title", "Añadir pin");
+    var heading = el("h2", "dialog__title pin-editor__title", editing ? "Editar pin" : "Añadir pin");
     heading.id = "pin-editor-title-" + uid;
     body.appendChild(heading);
 
@@ -452,28 +461,30 @@
     var saving = false;
 
     // Nombre vacío (o solo espacios) → etiqueta del icono. Si falla, paneles y borrador siguen.
+    // Al editar (SPEC 11) se actualiza el pin (markerService.update: conserva id, mapId, found y
+    // createdAt); los avisos de error son los mismos.
     saveButton.addEventListener("click", function () {
       if (saving || !draft) {
         return;
       }
       saving = true;
       saveButton.disabled = true;
-      markerService
-        .create(map.id, {
-          x: draft.x,
-          y: draft.y,
-          name: displayName(),
-          note: draft.note,
-          icon: draft.icon,
-          color: draft.color,
-          size: draft.size,
-        })
+      var fields = {
+        x: draft.x,
+        y: draft.y,
+        name: displayName(),
+        note: draft.note,
+        icon: draft.icon,
+        color: draft.color,
+        size: draft.size,
+      };
+      (editing ? markerService.update(editing.id, fields) : markerService.create(map.id, fields))
         .then(
           function (marker) {
             if (closed) {
               return;
             }
-            // El borrador pasa a ser un pin guardado (no arrastrable) en el mismo sitio.
+            // El borrador pasa a ser un pin guardado en el mismo sitio (al editar, el visor repinta el pin).
             if (options.onSaved) {
               options.onSaved(marker);
             }
@@ -599,22 +610,42 @@
       syncDraftPosition();
     }
 
+    // Al añadir: en la zona libre, con caída. Al editar (SPEC 11): en el sitio del pin, con sus
+    // campos y su estado encontrado (.pin--found), sin caída ni búsqueda de hueco.
     function createDraft() {
-      var latLng = initialLatLng(style.size);
-      var relative = pinLayer.toRelative(map, latLng);
-      draft = {
-        marker: null,
-        x: relative.x,
-        y: relative.y,
-        name: "",
-        note: "",
-        icon: style.icon,
-        color: style.color,
-        size: style.size,
-      };
+      var latLng;
+      if (editing) {
+        latLng = pinLayer.toLatLng(map, editing.x, editing.y);
+        draft = {
+          marker: null,
+          x: editing.x,
+          y: editing.y,
+          name: editing.name,
+          note: editing.note || "",
+          icon: editing.icon,
+          color: editing.color,
+          size: editing.size,
+          found: editing.found === true,
+        };
+        nameInput.value = draft.name;
+        noteInput.value = draft.note;
+      } else {
+        latLng = initialLatLng(style.size);
+        var relative = pinLayer.toRelative(map, latLng);
+        draft = {
+          marker: null,
+          x: relative.x,
+          y: relative.y,
+          name: "",
+          note: "",
+          icon: style.icon,
+          color: style.color,
+          size: style.size,
+        };
+      }
       // draggable: el arrastre de L.Marker no mueve el mapa mientras dura.
       draft.marker = L.marker(latLng, {
-        icon: pinLayer.divIcon(draft, "pin--draft pin--dropping"),
+        icon: pinLayer.divIcon(draft, editing ? "pin--draft" : "pin--draft pin--dropping"),
         keyboard: false,
         draggable: true,
         autoPan: false,
@@ -625,7 +656,7 @@
         keepDraftInside();
         syncDraftPosition();
       });
-      draft.marker.bindTooltip(pinLayer.tooltipContent(pinIcons.label(draft.icon)), {
+      draft.marker.bindTooltip(pinLayer.tooltipContent(displayName()), {
         direction: "top",
         className: "pin-tooltip",
       });
@@ -633,8 +664,10 @@
 
       // Caída desde el borde superior del mapa: la distancia es la altura del punto en la vista
       // más medio pin. La animación va en el glifo; Leaflet mueve el contenedor con transform.
-      var y = leafletMap.latLngToContainerPoint(latLng).y;
-      draft.marker.getElement().style.setProperty("--pin-drop-from", -(y + draft.size / 2) + "px");
+      if (!editing) {
+        var y = leafletMap.latLngToContainerPoint(latLng).y;
+        draft.marker.getElement().style.setProperty("--pin-drop-from", -(y + draft.size / 2) + "px");
+      }
 
       nameInput.placeholder = pinIcons.label(draft.icon);
       renderIconButton();
@@ -717,7 +750,8 @@
         }
         lastStyle = found;
         // El tamaño no se hereda: el borrador empieza siempre en SIZE.default (el botón sí lo aplica).
-        if (found) {
+        // Al editar, el borrador empieza con el estilo del pin (createDraft).
+        if (found && !editing) {
           style = { icon: found.icon, color: found.color, size: markerService.SIZE.default };
         }
         start();

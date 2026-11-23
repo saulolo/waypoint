@@ -1,5 +1,5 @@
 /*
- * Servicio de textos sobre el mapa (SPEC 10): validar, crear, listar, mover y borrar.
+ * Servicio de textos sobre el mapa (SPEC 10): validar, crear, listar, mover, editar (SPEC 11) y borrar.
  * Usa los mismos colores que los pines (markerService.COLORS).
  * No toca el DOM de la UI.
  */
@@ -37,7 +37,7 @@
   }
 
   /**
-   * Valida los campos de un texto nuevo.
+   * Valida los campos de un texto (al crear y al editar).
    * @returns {object} Los campos normalizados (texto sin espacios en los extremos, nota "" si falta).
    * @throws {InvalidLabelError}
    */
@@ -125,6 +125,29 @@
   }
 
   /**
+   * Edita un texto (SPEC 11): posición y campos, con las mismas reglas que create.
+   * Conserva id, mapId y createdAt.
+   * @param {string} id
+   * @param {{x, y, text, note, color, size}} fields
+   * @returns {Promise<object>} El texto actualizado.
+   *   Rechaza con InvalidLabelError (sin escribir) si un campo no es válido, o si el texto no existe.
+   */
+  function update(id, fields) {
+    var valid;
+    try {
+      valid = validate(fields);
+    } catch (error) {
+      return Promise.reject(error);
+    }
+    return repository.update(id, valid).then(function (label) {
+      if (!label) {
+        throw new InvalidLabelError("El texto no existe: " + id);
+      }
+      return label;
+    });
+  }
+
+  /**
    * @param {string} id
    * @returns {Promise<void>}
    */
@@ -143,6 +166,7 @@
     create: create,
     listByMap: listByMap,
     move: move,
+    update: update,
     remove: remove,
   };
 })(window.Waypoint);

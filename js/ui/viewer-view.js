@@ -355,7 +355,11 @@
       });
 
       // Pines guardados del mapa: si la carga falla, avisa y el mapa sigue abierto.
-      pins = pinLayer.create(leafletMap, map);
+      pins = pinLayer.create(leafletMap, map, {
+        onEdit: function (marker) {
+          openPinEditor(map, marker);
+        },
+      });
       // Antes de load(): los pines ocultos ni se pintan.
       applyFilter(FILTERS[0], map.hidePending !== true);
       applyFilter(FILTERS[1], map.hideFound !== true);
@@ -365,7 +369,11 @@
       pins.load();
 
       // Textos guardados (SPEC 10): si la carga falla, avisa y el mapa sigue abierto.
-      labels = labelLayer.create(leafletMap, map);
+      labels = labelLayer.create(leafletMap, map, {
+        onEdit: function (label) {
+          openLabelEditor(map, label);
+        },
+      });
       labels.load();
     }
 
@@ -375,11 +383,27 @@
       return hidden ? 0 : panel.offsetWidth;
     }
 
+    // Foco en un elemento recién editado; si no está pintado (oculto por un filtro), en el mapa.
+    function focusEdited(layer, id) {
+      if (!layer || !layer.focus(id)) {
+        if (leafletMap) {
+          leafletMap.getContainer().focus();
+        }
+      }
+    }
+
     // Modo "añadir pin": panel derecho y borrador. Los controles de la esquina se ocultan mientras
     // dura (.viewer--adding-pin); al cancelar vuelven y el foco regresa al botón "Añadir pin".
-    function openPinEditor(map) {
-      if (closeEditor || closeLabelEditor) {
+    // Con `editing` (SPEC 11), modo "editar pin": el pin guardado sale del mapa mientras dura y
+    // vuelve al cerrar (con los datos nuevos al guardar, con los originales en otro caso); el foco
+    // va al pin.
+    function openPinEditor(map, editing) {
+      if (closeEditor || closeLabelEditor || !pins) {
         return;
+      }
+      var saved = null; // al editar: el marcador guardado, para repintarlo al cerrar
+      if (editing) {
+        pins.startEditing(editing.id);
       }
       closeEditor = pinEditor.open({
         root: root,
@@ -387,8 +411,13 @@
         map: map,
         pins: pins,
         labels: labels,
+        marker: editing || null,
         freeLeft: freeLeft,
         onSaved: function (marker) {
+          if (editing) {
+            saved = marker;
+            return;
+          }
           if (pins) {
             // Los pines nacen pendientes: con "Pendientes" apagado el nuevo no se vería.
             if (!FILTERS[0].visible) {
@@ -399,6 +428,15 @@
         },
         onClose: function (reason) {
           closeEditor = null;
+          if (editing) {
+            if (pins) {
+              pins.stopEditing(editing.id, saved);
+            }
+            if (reason !== "unmount") {
+              focusEdited(pins, editing.id);
+            }
+            return;
+          }
           if (reason !== "unmount" && controls) {
             controls.focusAddPin();
           }
@@ -407,10 +445,14 @@
     }
 
     // Modo "añadir texto" (SPEC 10): como el de pin, con .viewer--adding-label; al cancelar el foco
-    // regresa al botón "Añadir texto".
-    function openLabelEditor(map) {
-      if (closeEditor || closeLabelEditor) {
+    // regresa al botón "Añadir texto". Con `editing` (SPEC 11), modo "editar texto", como el de pin.
+    function openLabelEditor(map, editing) {
+      if (closeEditor || closeLabelEditor || !labels) {
         return;
+      }
+      var saved = null; // al editar: el texto guardado, para repintarlo al cerrar
+      if (editing) {
+        labels.startEditing(editing.id);
       }
       closeLabelEditor = labelEditor.open({
         root: root,
@@ -418,13 +460,28 @@
         map: map,
         freeLeft: freeLeft,
         labels: labels,
+        pins: pins,
+        label: editing || null,
         onSaved: function (label) {
+          if (editing) {
+            saved = label;
+            return;
+          }
           if (labels) {
             labels.add(label);
           }
         },
         onClose: function (reason) {
           closeLabelEditor = null;
+          if (editing) {
+            if (labels) {
+              labels.stopEditing(editing.id, saved);
+            }
+            if (reason !== "unmount") {
+              focusEdited(labels, editing.id);
+            }
+            return;
+          }
           if (reason !== "unmount" && controls) {
             controls.focusAddLabel();
           }

@@ -3,7 +3,7 @@
 App web local para seguir tu progreso en videojuegos sobre sus mapas grandes.
 Creas una carpeta por juego (con su portada), cargas dentro las imágenes de sus mapas, se guardan en tu navegador y las abres con zoom y arrastre.
 
-> Estado: **SPEC 10** (juegos con portada, biblioteca de mapas en orden alfabético y visor con zoom fluido, panel lateral plegable con selector de mapas, controles de vista, pines sobre el mapa, pines encontrados con filtro y textos sobre el mapa, con tema visual arcade retro). Editar pines y textos llega en una spec futura.
+> Estado: **SPEC 11** (juegos con portada, biblioteca de mapas en orden alfabético y visor con zoom fluido, panel lateral plegable con selector de mapas, controles de vista, pines sobre el mapa, pines encontrados con filtro, textos sobre el mapa y edición de pines y textos, con tema visual arcade retro).
 >
 > **Aviso de la versión SPEC 03:** al actualizar desde la versión anterior, los mapas que ya tenías guardados se **borran** (ahora todo mapa pertenece a un juego). Si quieres conservar alguno, vuelve a cargarlo dentro de un juego.
 
@@ -80,12 +80,12 @@ Marcas sobre el mapa con un icono, un color, un nombre y una nota. Se guardan en
   - **Icono**: abre al lado el selector con 54 iconos en 8 categorías plegables (Por defecto, Localizaciones, Enemigos, Tesoros, Equipo, Misiones, Información y Viaje; "Por defecto" es una mano que señala) y la barra de **tamaño** (20–64 px). Los cambios se ven al momento en el borrador. *Listo* o **Esc** lo cierran.
   - **Último usado**: el icono y el color del último pin guardado en cualquier mapa del juego. El borrador ya cae con ellos; el botón los vuelve a aplicar. El tamaño empieza siempre en 32 px.
   - **Guardar** lo deja en el mapa. **Cancelar** o **Esc** lo descartan.
-- **Ver**: pasa el ratón por un pin para ver su nombre; haz clic para ver nombre, nota y *Borrar*. El popup se cierra con su ×, **Esc** o un clic en el mapa.
+- **Ver**: pasa el ratón por un pin para ver su nombre; haz clic para ver nombre, nota, *Editar* y *Borrar*. El popup se cierra con su ×, **Esc** o un clic en el mapa.
 - **Mover**: mantén pulsado un pin y arrástralo; se guarda al soltar. También funciona con el panel *Añadir pin* abierto (ahí, un clic sin arrastrar sobre un pin lleva el borrador a ese punto).
 - **Borrar**: *Borrar* en su popup; pide confirmación y no se puede deshacer. Borrar un mapa o un juego borra también sus pines.
 - **Encontrados**: en el popup de un pin, el botón con un **ojo** (arriba a la derecha) lo marca como encontrado: el pin queda translúcido al momento y el ojo se muestra tachado. Púlsalo otra vez para volver a marcarlo como pendiente. Se guarda en el navegador.
 - **Filtro de pines**: en el panel lateral, bajo el nombre del juego, dos botones con icono: **Pendientes** y **Encontrados**. Cada uno muestra u oculta los pines de ese tipo (un icono tachado = ocultos); con los dos activos se ven todos, con solo **Encontrados** ves únicamente los ya hallados, y con los dos apagados no se ve ninguno. El filtro se guarda por mapa. Si marcas un pin con su filtro oculto, el pin desaparece al cerrar su popup.
-- El popup tiene también un botón **Editar**, todavía sin función: editar pines llega en una spec futura.
+- **Editar**: *Editar* en su popup abre el panel *Editar pin* con nombre, nota, icono, color y tamaño del pin. El pin se convierte en el borrador, en su mismo sitio (no cae): cambia lo que quieras y muévelo arrastrándolo o con un clic en el mapa. **Guardar** aplica los cambios (con el nombre vacío se usa el del icono); **Cancelar** o **Esc** lo dejan como estaba. Editar no cambia *Último usado* ni si el pin está encontrado. Si el filtro oculta el pin, al guardar no se ve.
 
 ### Textos
 
@@ -96,8 +96,9 @@ Rótulos sobre el mapa (el nombre de una ciudad, una región o un río), en letr
   - **Texto** (obligatorio, una línea, hasta 40 caracteres; se pinta tal cual lo escribes) y **Nota** (opcional, hasta 500, solo se ve en el popup).
   - **Color**: los mismos 8 que los pines. **Tamaño**: de 8 a 32 px. Empieza siempre en blanco y 12 px.
   - **Guardar** (se activa al escribir el texto) lo deja en el mapa. **Cancelar** o **Esc** lo descartan.
-- **Ver**: clic en un texto para ver el texto, su nota y *Borrar*. El popup se cierra con su ×, **Esc** o un clic en el mapa.
+- **Ver**: pasa el ratón por un texto con nota para verla; haz clic para ver el texto, su nota, *Editar* y *Borrar*. El popup se cierra con su ×, **Esc** o un clic en el mapa.
 - **Mover**: mantén pulsado un texto y arrástralo; se guarda al soltar. Con los paneles *Añadir pin* o *Añadir texto* abiertos, un clic sin arrastrar sobre un texto lleva el borrador a ese punto.
+- **Editar**: *Editar* en su popup abre el panel *Editar texto* con texto, nota, color y tamaño. El texto se convierte en el borrador, en su mismo sitio: cambia lo que quieras y muévelo como al añadir. **Guardar** (desactivado con el texto vacío) aplica los cambios; **Cancelar** o **Esc** lo dejan como estaba. Mientras editas un texto, un clic en un pin tampoco abre su popup: lleva el borrador ahí.
 - **Borrar**: *Borrar* en su popup; pide confirmación y no se puede deshacer. Borrar un mapa o un juego borra también sus textos.
 
 ### Aspecto
@@ -135,7 +136,7 @@ La documentación técnica está en [`CLAUDE.md`](CLAUDE.md) y las especificacio
 
 ## Próximamente
 
-- Editar pines y textos guardados (nombre, nota y estilo), filtros por categoría, ocultar textos y contador de encontrados.
+- Filtros por categoría, ocultar textos y contador de encontrados.
 - Ideas para después: categorías con color, rutas, exportar/importar copias de seguridad, tiles para imágenes gigantes.
 
 ## Créditos
