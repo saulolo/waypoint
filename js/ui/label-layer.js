@@ -1,16 +1,20 @@
 /*
  * Capa de textos guardados del visor (SPEC 10).
  *
- *   var layer = Waypoint.ui.labelLayer.create(leafletMap, map);  // map: { id, width, height }
+ *   var layer = Waypoint.ui.labelLayer.create(leafletMap, map, { onEdit });  // map: { id, width, height }
  *   layer.load();          // lee los textos del mapa y los pinta; aviso si falla
  *   layer.add(label);      // pinta un texto recién guardado
  *   layer.setPlacing(fn);  // modo "añadir pin" o "añadir texto" on (fn(latLng) al hacer clic en un texto) / off (null)
+ *   layer.startEditing(id);       // SPEC 11: quita el texto del mapa mientras se edita (sigue en memoria)
+ *   layer.stopEditing(id, label); // lo vuelve a pintar con los datos nuevos, o los originales con null
+ *   layer.focus(id);       // foco en el texto; false si no está pintado
  *   layer.destroy();       // quita marcadores y listeners (antes de leafletMap.remove())
  *
  * Cada texto es un L.Marker con L.divIcon de tamaño 0 anclado en el punto guardado; dentro, el texto
  * se centra con transform (su ancho no se conoce al crear el icono). Letra --font-pixel a `size` px de
- * pantalla (no cambia con el zoom), en su color, con contorno y sin fondo. Sin tooltip: el texto ya
- * se ve. Clic → popup arcade con el texto, la nota y "Borrar" (con dialog.confirm). El popup se cierra
+ * pantalla (no cambia con el zoom), en su color, con contorno y sin fondo. Hover → tooltip con la
+ * nota, si tiene (SPEC 11; oculto con el popup abierto y, por CSS, en los modos de añadir/editar). Clic → popup arcade con el texto, la nota, "Editar" (SPEC 11: cierra el popup y llama a
+ * onEdit(label)) y "Borrar" (con dialog.confirm). El popup se cierra
  * con su ×, Esc o un clic en el mapa. Clic sostenido y arrastre mueve el texto (dentro de la imagen)
  * y guarda la posición al soltar. Los filtros de pines (SPEC 09) no les afectan.
  * En los modos de añadir (setPlacing) siguen moviéndose, pero sin popup: un clic sin arrastre lleva
@@ -68,12 +72,15 @@
       iconSize: [0, 0],
       iconAnchor: [0, 0],
       popupAnchor: [0, -half],
+      tooltipAnchor: [0, -half],
     });
   }
 
-  function create(leafletMap, map) {
+  function create(leafletMap, map, options) {
+    options = options || {};
     var destroyed = false;
-    var savedLabels = {}; // id → L.Marker
+    var savedLabels = {}; // id → L.Marker (los pintados)
+    var labels = {}; // id → texto (todos, también el que está en edición)
     var popups = {}; // id → L.Popup (se desligan del texto en los modos de añadir y se vuelven a ligar)
     var placeHandler = null; // modo de añadir: clic en un texto guardado → handler(latLng)
 
@@ -84,6 +91,16 @@
         box.appendChild(el("p", "pin-popup__note", label.note));
       }
       var actions = el("div", "pin-popup__actions label-popup__actions");
+      // EDITAR (SPEC 11): cierra el popup (closePopup, sin quitar el botón a mano) y avisa al visor.
+      var edit = el("button", "btn btn--edit label-popup__edit", "Editar");
+      edit.type = "button";
+      edit.addEventListener("click", function () {
+        leafletMap.closePopup();
+        if (options.onEdit && !destroyed) {
+          options.onEdit(label);
+        }
+      });
+      actions.appendChild(edit);
       var del = el("button", "btn btn--danger label-popup__delete", "Borrar");
       del.type = "button";
       del.addEventListener("click", function () {
@@ -118,6 +135,7 @@
                 delete savedLabels[label.id];
                 delete popups[label.id];
               }
+              delete labels[label.id];
             },
             function (error) {
               console.error("[label-layer] No se pudo borrar el texto:", error);
@@ -180,7 +198,13 @@
       });
     }
 
+    // Registra un texto y lo pinta.
     function add(label) {
+      labels[label.id] = label;
+      return show(label);
+    }
+
+    function show(label) {
       var marker = L.marker(pinLayer.toLatLng(map, label.x, label.y), {
         icon: divIcon(label),
         keyboard: false,
@@ -203,7 +227,21 @@
           placeHandler(leafletMap.mouseEventToLatLng(event.originalEvent));
         }
       });
+      // Tooltip con la nota (SPEC 11), solo si tiene. Un nodo de texto: Leaflet trata los strings
+      // como HTML. Con el popup abierto, sobra (sale en el mismo sitio).
+      if (label.note && label.note.trim()) {
+        marker.bindTooltip(el("span", "label-tooltip__note", label.note), {
+          direction: "top",
+          className: "pin-tooltip label-tooltip",
+        });
+        marker.on("tooltipopen", function () {
+          if (marker.isPopupOpen()) {
+            marker.closeTooltip();
+          }
+        });
+      }
       marker.on("popupopen", function () {
+        marker.closeTooltip();
         document.addEventListener("keydown", onKeyDown);
       });
       marker.on("popupclose", function () {
@@ -250,6 +288,59 @@
       });
     }
 
+    // Quita el texto del mapa sin olvidarlo (sigue en `labels`).
+    function unpaint(id) {
+      var marker = savedLabels[id];
+      if (!marker) {
+        return;
+      }
+      delete savedLabels[id];
+      delete popups[id];
+      marker.remove(); // cierra también su popup
+    }
+
+    /**
+     * Modo "editar texto" (SPEC 11): quita el texto del mapa mientras el borrador ocupa su lugar.
+     * El texto sigue en memoria para devolverlo tal cual al cancelar.
+     */
+    function startEditing(id) {
+      if (labels[id]) {
+        unpaint(id);
+      }
+    }
+
+    /**
+     * Fin de la edición: vuelve a pintar el texto con los datos nuevos (label) o con los originales
+     * (null). Los datos nuevos se copian sobre el mismo objeto: el popup y el arrastre lo comparten.
+     */
+    function stopEditing(id, label) {
+      var current = labels[id];
+      if (!current || destroyed) {
+        return;
+      }
+      if (label) {
+        Object.assign(current, label);
+      }
+      unpaint(id);
+      show(current);
+    }
+
+    /**
+     * Foco en el texto (SPEC 11).
+     * @returns {boolean} false si no está pintado (en edición).
+     */
+    function focus(id) {
+      var marker = savedLabels[id];
+      var node = marker && marker.getElement();
+      if (!node) {
+        return false;
+      }
+      // Fuera del orden de tabulación (keyboard: false): -1 lo hace enfocable por código.
+      node.setAttribute("tabindex", "-1");
+      node.focus();
+      return true;
+    }
+
     function destroy() {
       destroyed = true;
       placeHandler = null;
@@ -259,12 +350,16 @@
       });
       savedLabels = {};
       popups = {};
+      labels = {};
     }
 
     return {
       load: load,
       add: add,
       setPlacing: setPlacing,
+      startEditing: startEditing,
+      stopEditing: stopEditing,
+      focus: focus,
       destroy: destroy,
     };
   }

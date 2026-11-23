@@ -1,19 +1,23 @@
 /*
  * Capa de pines guardados del visor (SPEC 08).
  *
- *   var layer = Waypoint.ui.pinLayer.create(leafletMap, map);  // map: { id, width, height }
+ *   var layer = Waypoint.ui.pinLayer.create(leafletMap, map, { onEdit });  // map: { id, width, height }
  *   layer.load();          // lee los pines del mapa y los pinta; aviso si falla
  *   layer.add(marker);     // pinta un pin recién guardado
  *   layer.setHidePending(b); // true: quita del mapa los pines pendientes (independiente de setHideFound)
  *   layer.setHideFound(b); // true: quita del mapa los pines encontrados; false: los vuelve a pintar (SPEC 09)
  *   layer.setPlacing(fn);  // modo "añadir pin" on (fn(latLng) al hacer clic en un pin) / off (null)
+ *   layer.startEditing(id);        // SPEC 11: quita el pin del mapa mientras se edita (sigue en memoria)
+ *   layer.stopEditing(id, marker); // lo vuelve a pintar con los datos nuevos, o los originales con null
+ *   layer.focus(id);       // foco en el pin; false si no está pintado
  *   layer.destroy();       // quita marcadores y listeners (antes de leafletMap.remove())
  *
  * Cada pin es un L.Marker con L.divIcon: el glifo de pinIcons a `size` px de pantalla (no cambia con
  * el zoom), centrado en el punto del pin. Si `found === true` (SPEC 09) lleva `.pin--found`: glifo
  * translúcido. Hover → tooltip con el nombre; clic → popup arcade con
  * nombre, nota, el botón ojo "Encontrado" (alterna `found`, SPEC 09: cambio al momento, vuelta atrás con
- * aviso si falla el guardado) y "Borrar" (con dialog.confirm). El popup se cierra con su ×, Esc o un clic en el mapa.
+ * aviso si falla el guardado), "Editar" (SPEC 11: cierra el popup y llama a onEdit(marker)) y "Borrar"
+ * (con dialog.confirm). El popup se cierra con su ×, Esc o un clic en el mapa.
  * Clic sostenido y arrastre mueve el pin (dentro de la imagen) y guarda la posición al soltar.
  * En modo "añadir pin" (setPlacing) siguen moviéndose, pero sin popup ni tooltip: un clic sin
  * arrastre lleva el borrador a ese punto.
@@ -87,8 +91,10 @@
   var EYE_SVG = SVG_OPEN + '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
   var EYE_OFF_SVG = SVG_OPEN + '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
 
-  function create(leafletMap, map) {
+  function create(leafletMap, map, options) {
+    options = options || {};
     var destroyed = false;
+    var editing = {}; // id → true: pin en edición (SPEC 11), fuera del mapa aunque el filtro lo deje
     var savedPins = {}; // id → L.Marker
     var popups = {}; // id → L.Popup (se desligan del pin en modo "añadir pin" y se vuelven a ligar)
     var foundButtons = {}; // id → botón ojo del popup
@@ -100,6 +106,11 @@
     function shouldHide(marker) {
       return marker.found === true ? hideFound : hidePending;
     }
+
+    // ¿Fuera del mapa por el filtro o por estar en edición?
+    function isOut(marker) {
+      return editing[marker.id] === true || shouldHide(marker);
+    }
     var hidden = {}; // id → true: pin quitado del mapa por el filtro (sigue en `markers`)
     var dragging = false; // un arrastre cierra el popup: eso no debe ocultar el pin que se arrastra
     var placeHandler = null; // modo "añadir pin": clic en un pin guardado → handler(latLng)
@@ -109,7 +120,7 @@
     function paintFound(marker) {
       var found = marker.found === true;
       var pin = savedPins[marker.id];
-      if (!pin && !found && hidden[marker.id] && !shouldHide(marker) && !destroyed) {
+      if (!pin && !found && hidden[marker.id] && !isOut(marker) && !destroyed) {
         // Marcado con el filtro activo, ocultado al cerrar el popup y revertido por un fallo al guardar.
         showPin(marker);
         return;
@@ -175,9 +186,15 @@
         box.appendChild(el("p", "pin-popup__note", marker.note));
       }
       var actions = el("div", "pin-popup__actions");
-      // EDITAR: solo el botón, sin función todavía (editar pines es de una spec futura).
+      // EDITAR (SPEC 11): cierra el popup (closePopup, sin quitar el botón a mano) y avisa al visor.
       var edit = el("button", "btn btn--edit pin-popup__edit", "Editar");
       edit.type = "button";
+      edit.addEventListener("click", function () {
+        leafletMap.closePopup();
+        if (options.onEdit && !destroyed) {
+          options.onEdit(marker);
+        }
+      });
       actions.appendChild(edit);
       var del = el("button", "btn btn--danger pin-popup__delete", "Borrar");
       del.type = "button";
@@ -315,7 +332,7 @@
     // Registra un pin y lo pinta salvo que el filtro lo oculte.
     function add(marker) {
       markers[marker.id] = marker;
-      if (shouldHide(marker)) {
+      if (isOut(marker)) {
         hidden[marker.id] = true;
         return null;
       }
@@ -427,7 +444,7 @@
     function refresh() {
       Object.keys(markers).forEach(function (id) {
         var marker = markers[id];
-        if (shouldHide(marker)) {
+        if (isOut(marker)) {
           var pin = savedPins[id];
           if (pin && pin.isPopupOpen()) {
             pin.closePopup();
@@ -437,6 +454,62 @@
           showPin(marker);
         }
       });
+    }
+
+    /**
+     * Modo "editar pin" (SPEC 11): quita el pin del mapa mientras el borrador ocupa su lugar.
+     * El marcador sigue en memoria para devolverlo tal cual al cancelar.
+     */
+    function startEditing(id) {
+      if (!markers[id]) {
+        return;
+      }
+      editing[id] = true;
+      var pin = savedPins[id];
+      if (pin) {
+        pin.closePopup();
+        hidePin(id);
+      }
+    }
+
+    /**
+     * Fin de la edición: vuelve a pintar el pin con los datos nuevos (marker) o con los originales
+     * (null), respetando los filtros de SPEC 09. Los datos nuevos se copian sobre el mismo objeto:
+     * el popup y el arrastre lo comparten.
+     */
+    function stopEditing(id, marker) {
+      var current = markers[id];
+      delete editing[id];
+      if (!current || destroyed) {
+        return;
+      }
+      if (marker) {
+        Object.assign(current, marker);
+      }
+      if (savedPins[id]) {
+        hidePin(id);
+      }
+      if (shouldHide(current)) {
+        hidden[id] = true;
+      } else {
+        showPin(current);
+      }
+    }
+
+    /**
+     * Foco en el pin (SPEC 11).
+     * @returns {boolean} false si no está pintado (oculto por el filtro o en edición).
+     */
+    function focus(id) {
+      var pin = savedPins[id];
+      var node = pin && pin.getElement();
+      if (!node) {
+        return false;
+      }
+      // Los pines no están en el orden de tabulación (keyboard: false): -1 los hace enfocables por código.
+      node.setAttribute("tabindex", "-1");
+      node.focus();
+      return true;
     }
 
     /**
@@ -466,6 +539,7 @@
       foundButtons = {};
       markers = {};
       hidden = {};
+      editing = {};
     }
 
     return {
@@ -474,6 +548,9 @@
       setPlacing: setPlacing,
       setHideFound: setHideFound,
       setHidePending: setHidePending,
+      startEditing: startEditing,
+      stopEditing: stopEditing,
+      focus: focus,
       boxes: boxes,
       destroy: destroy,
     };

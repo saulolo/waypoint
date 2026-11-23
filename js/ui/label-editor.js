@@ -1,5 +1,5 @@
 /*
- * Modo "añadir texto" del visor (SPEC 10): panel de texto y texto borrador.
+ * Modos "añadir texto" (SPEC 10) y "editar texto" (SPEC 11) del visor: panel de texto y texto borrador.
  *
  *   var close = Waypoint.ui.labelEditor.open({
  *     root,        // .viewer: el panel se cuelga de él, como hermano de .viewer__stage
@@ -7,7 +7,9 @@
  *     map,         // { id, gameId, width, height }
  *     freeLeft,    // () → px que tapa el panel izquierdo (0 si está contraído u oculto)
  *     labels,      // capa de textos guardados (labelLayer): modo colocar con setPlacing
- *     onSaved,     // (label) → el visor lo añade a la capa de textos guardados
+ *     label,       // opcional (SPEC 11): texto guardado a editar → modo "editar texto"
+ *     pins,        // capa de pines (pinLayer): solo al editar, también en modo colocar
+ *     onSaved,     // (label) → el visor lo añade a la capa de textos guardados (o lo repinta al editar)
  *     onClose,     // (reason: "save" | "cancel" | "unmount") → el visor devuelve el foco
  *   });
  *   close();       // cancela sin avisar (desmontaje del visor)
@@ -30,6 +32,12 @@
  * para que el visor lo pinte como texto guardado y cierra. Si falla, avisa y panel y borrador siguen.
  *
  * Cancelar (botón, Esc o desmontaje) quita borrador, panel y listeners; no se guarda nada.
+ *
+ * Modo "editar texto" (SPEC 11, opción `label`): título "Editar texto", campos con los valores del
+ * texto y el borrador en su sitio, con su estilo, sin caída. Los pines guardados también pasan a
+ * modo colocar (al añadir no cambian). "Guardar" (deshabilitado con "Texto"
+ * vacío) llama a labelService.update. Quitar el texto guardado del mapa y devolverlo al cerrar es
+ * cosa del visor (labels.startEditing / stopEditing).
  * Nunca accede a IndexedDB.
  */
 (function (Waypoint) {
@@ -61,8 +69,10 @@
     var map = options.map;
     var uid = ++idCounter;
     var closed = false;
+    // Modo "editar texto" (SPEC 11): el texto guardado que se edita; null al añadir.
+    var editing = options.label || null;
 
-    // { marker: L.Marker, x, y, text, note, color, size } mientras se añade.
+    // { marker: L.Marker, x, y, text, note, color, size } mientras se añade o se edita.
     var draft = null;
 
     /* ---------- Panel de texto ---------- */
@@ -72,7 +82,7 @@
     var body = el("div", "dialog__form label-editor__body");
     panel.appendChild(body);
 
-    var heading = el("h2", "dialog__title label-editor__title", "Añadir texto");
+    var heading = el("h2", "dialog__title label-editor__title", editing ? "Editar texto" : "Añadir texto");
     heading.id = "label-editor-title-" + uid;
     body.appendChild(heading);
 
@@ -212,22 +222,23 @@
 
     var saving = false;
 
-    // Si falla, panel y borrador siguen.
+    // Si falla, panel y borrador siguen. Al editar (SPEC 11) se actualiza el texto
+    // (labelService.update: conserva id, mapId y createdAt); los avisos son los mismos.
     saveButton.addEventListener("click", function () {
       if (saving || !draft || !hasText()) {
         return;
       }
       saving = true;
       saveButton.disabled = true;
-      labelService
-        .create(map.id, {
-          x: draft.x,
-          y: draft.y,
-          text: draft.text,
-          note: draft.note,
-          color: draft.color,
-          size: draft.size,
-        })
+      var fields = {
+        x: draft.x,
+        y: draft.y,
+        text: draft.text,
+        note: draft.note,
+        color: draft.color,
+        size: draft.size,
+      };
+      (editing ? labelService.update(editing.id, fields) : labelService.create(map.id, fields))
         .then(
           function (label) {
             if (closed) {
@@ -300,20 +311,38 @@
       syncDraftPosition();
     }
 
+    // Al añadir: en la zona libre, con caída y estilo por defecto. Al editar (SPEC 11): en el sitio
+    // del texto, con sus campos, sin caída.
     function createDraft() {
-      var latLng = initialLatLng();
-      var relative = pinLayer.toRelative(map, latLng);
-      draft = {
-        marker: null,
-        x: relative.x,
-        y: relative.y,
-        text: "",
-        note: "",
-        color: labelService.DEFAULT_STYLE.color,
-        size: labelService.DEFAULT_STYLE.size,
-      };
+      var latLng;
+      if (editing) {
+        latLng = pinLayer.toLatLng(map, editing.x, editing.y);
+        draft = {
+          marker: null,
+          x: editing.x,
+          y: editing.y,
+          text: editing.text,
+          note: editing.note || "",
+          color: editing.color,
+          size: editing.size,
+        };
+        textInput.value = draft.text;
+        noteInput.value = draft.note;
+      } else {
+        latLng = initialLatLng();
+        var relative = pinLayer.toRelative(map, latLng);
+        draft = {
+          marker: null,
+          x: relative.x,
+          y: relative.y,
+          text: "",
+          note: "",
+          color: labelService.DEFAULT_STYLE.color,
+          size: labelService.DEFAULT_STYLE.size,
+        };
+      }
       draft.marker = L.marker(latLng, {
-        icon: labelLayer.divIcon(draftStyle(), draftClass(true)),
+        icon: labelLayer.divIcon(draftStyle(), draftClass(!editing)),
         keyboard: false,
         draggable: true, // el arrastre de L.Marker no mueve el mapa mientras dura
         autoPan: false,
@@ -328,8 +357,10 @@
 
       // Caída desde el borde superior del mapa: la distancia es la altura del punto en la vista
       // más medio texto. La animación va en .label-glyph; Leaflet mueve el contenedor con transform.
-      var y = leafletMap.latLngToContainerPoint(latLng).y;
-      draft.marker.getElement().style.setProperty("--pin-drop-from", -(y + draft.size / 2) + "px");
+      if (!editing) {
+        var y = leafletMap.latLngToContainerPoint(latLng).y;
+        draft.marker.getElement().style.setProperty("--pin-drop-from", -(y + draft.size / 2) + "px");
+      }
 
       renderControls();
     }
@@ -356,6 +387,9 @@
       if (options.labels) {
         options.labels.setPlacing(null);
       }
+      if (editing && options.pins) {
+        options.pins.setPlacing(null);
+      }
       if (draft) {
         draft.marker.remove();
         draft = null;
@@ -376,6 +410,11 @@
       leafletMap.on("click", onMapClick);
       if (options.labels) {
         options.labels.setPlacing(placeDraft);
+      }
+      // Al editar, también los pines guardados en modo colocar (sin popup: un solo modo a la vez).
+      // Al añadir no cambian (SPEC 10).
+      if (editing && options.pins) {
+        options.pins.setPlacing(placeDraft);
       }
       document.addEventListener("keydown", onKeyDown);
       textInput.focus();
