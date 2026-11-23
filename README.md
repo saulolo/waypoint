@@ -3,7 +3,7 @@
 App web local para seguir tu progreso en videojuegos sobre sus mapas grandes.
 Creas una carpeta por juego (con su portada), cargas dentro las imágenes de sus mapas, se guardan en tu navegador y las abres con zoom y arrastre.
 
-> Estado: **SPEC 09** (juegos con portada, biblioteca de mapas en orden alfabético y visor con zoom fluido, panel lateral plegable con selector de mapas, controles de vista, pines sobre el mapa y pines encontrados con filtro, con tema visual arcade retro). Editar pines llega en una spec futura.
+> Estado: **SPEC 10** (juegos con portada, biblioteca de mapas en orden alfabético y visor con zoom fluido, panel lateral plegable con selector de mapas, controles de vista, pines sobre el mapa, pines encontrados con filtro y textos sobre el mapa, con tema visual arcade retro). Editar pines y textos llega en una spec futura.
 >
 > **Aviso de la versión SPEC 03:** al actualizar desde la versión anterior, los mapas que ya tenías guardados se **borran** (ahora todo mapa pertenece a un juego). Si quieres conservar alguno, vuelve a cargarlo dentro de un juego.
 
@@ -46,6 +46,7 @@ Al abrir un juego ves su cabecera (**← Juegos**, portada, nombre y número de 
 - **Renombrar**: icono del lápiz en la tarjeta. El nombre no puede quedar vacío.
 - **Borrar**: icono de la papelera. Pide confirmación y no se puede deshacer.
 - En cualquier diálogo, **Esc** cancela sin cambios.
+- Las confirmaciones (borrar, imagen muy grande) son diálogos pequeños con el mensaje y dos botones.
 
 ### Visor
 
@@ -59,6 +60,7 @@ Al abrir un juego ves su cabecera (**← Juegos**, portada, nombre y número de 
 - **Botones + / −** y **doble clic**: un paso de zoom (el doble o la mitad).
 - **Rango de zoom**: desde 1/4 de "mapa entero visible" hasta 4× el tamaño real.
 - **Botones de vista** (abajo a la derecha, encima de + / −, cada uno en su propia caja):
+  - **T con +**: añade un texto (ver *Textos*).
   - **Pin con +**: añade un pin (ver *Pines*).
   - **Pantalla completa**: la app ocupa todo el monitor, sin la interfaz del navegador. En ella solo se ven el mapa y los botones: el panel lateral se oculta y vuelve como estaba al salir. Se sale con el mismo botón o con **Esc**. Salir del mapa también sale de pantalla completa.
   - **1:1 / ajustar**: un solo botón. Muestra **1:1** y pone el mapa a tamaño real, manteniendo el punto que estaba en el centro. Con el mapa a tamaño real cambia a un recuadro, y al pulsarlo deja el mapa entero visible y centrado. Si haces zoom con la rueda, vuelve a mostrar **1:1**.
@@ -85,10 +87,24 @@ Marcas sobre el mapa con un icono, un color, un nombre y una nota. Se guardan en
 - **Filtro de pines**: en el panel lateral, bajo el nombre del juego, dos botones con icono: **Pendientes** y **Encontrados**. Cada uno muestra u oculta los pines de ese tipo (un icono tachado = ocultos); con los dos activos se ven todos, con solo **Encontrados** ves únicamente los ya hallados, y con los dos apagados no se ve ninguno. El filtro se guarda por mapa. Si marcas un pin con su filtro oculto, el pin desaparece al cerrar su popup.
 - El popup tiene también un botón **Editar**, todavía sin función: editar pines llega en una spec futura.
 
+### Textos
+
+Rótulos sobre el mapa (el nombre de una ciudad, una región o un río), en letra pixel con contorno y sin fondo. Se guardan en el mapa, en el sitio exacto de la imagen: no cambian de tamaño en pantalla al hacer zoom. Los filtros de pines no los ocultan.
+
+- **Añadir**: botón **T con +** (encima del de pin). A la derecha se abre el panel *Añadir texto* y cae un texto borrador en el centro de la zona libre del mapa. Mientras está abierto, los botones de vista y + / − se ocultan.
+  - **Colocarlo**: arrástralo, o haz clic en el mapa para llevarlo a ese punto. No puede salir de la imagen.
+  - **Texto** (obligatorio, una línea, hasta 40 caracteres; se pinta tal cual lo escribes) y **Nota** (opcional, hasta 500, solo se ve en el popup).
+  - **Color**: los mismos 8 que los pines. **Tamaño**: de 8 a 32 px. Empieza siempre en blanco y 12 px.
+  - **Guardar** (se activa al escribir el texto) lo deja en el mapa. **Cancelar** o **Esc** lo descartan.
+- **Ver**: clic en un texto para ver el texto, su nota y *Borrar*. El popup se cierra con su ×, **Esc** o un clic en el mapa.
+- **Mover**: mantén pulsado un texto y arrástralo; se guarda al soltar. Con los paneles *Añadir pin* o *Añadir texto* abiertos, un clic sin arrastrar sobre un texto lleva el borrador a ese punto.
+- **Borrar**: *Borrar* en su popup; pide confirmación y no se puede deshacer. Borrar un mapa o un juego borra también sus textos.
+
 ### Aspecto
 
 - Tema arcade retro: neón, letra pixel, fondo con grid en movimiento y scanlines.
 - Cada tarjeta de juego y de mapa lleva un color de acento (cian, magenta, amarillo, verde, por turnos). Los nombres se ven en mayúsculas.
+- Los botones se distinguen por lo que hacen: confirmar (guardar, crear…) en cian, **cancelar** en violeta, **editar** en dorado, **borrar** en magenta y los de navegación en gris.
 - En el visor, la imagen del mapa se ve limpia, sin efectos encima.
 - Si tienes activado **reducir movimiento** en Windows (*Configuración → Accesibilidad → Efectos visuales → Efectos de animación*, desactivado), la app no anima nada.
 - La letra pixel no dibuja bien algunas vocales acentuadas en mayúsculas (la "Í" sale como "ı"). El nombre guardado no cambia: solo es cómo se ve.
@@ -99,7 +115,7 @@ Todo se guarda **en el navegador** (IndexedDB), en este equipo. No se sube nada 
 
 Ten en cuenta:
 
-- **Borrar los datos de navegación** de Chrome/Edge (cookies y datos de sitios) **borra tus juegos, portadas, mapas y pines**. Aún no hay exportar/importar copias de seguridad.
+- **Borrar los datos de navegación** de Chrome/Edge (cookies y datos de sitios) **borra tus juegos, portadas, mapas, pines y textos**. Aún no hay exportar/importar copias de seguridad.
 - Los datos son **de ese navegador y ese perfil**: Chrome y Edge, o dos perfiles de Chrome, tienen bibliotecas separadas.
 - Puedes **mover o renombrar la carpeta** del proyecto: los datos no dependen de la ruta.
 - Una ventana de **incógnito** no ve tu biblioteca y la pierde al cerrarse.
@@ -119,7 +135,7 @@ La documentación técnica está en [`CLAUDE.md`](CLAUDE.md) y las especificacio
 
 ## Próximamente
 
-- Editar pines guardados (nombre, nota y estilo), filtros por categoría y contador de encontrados.
+- Editar pines y textos guardados (nombre, nota y estilo), filtros por categoría, ocultar textos y contador de encontrados.
 - Ideas para después: categorías con color, rutas, exportar/importar copias de seguridad, tiles para imágenes gigantes.
 
 ## Créditos

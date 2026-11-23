@@ -64,7 +64,8 @@
     await waitFor(() => !!$(".leaflet-image-layer")?.complete); await sleep(500);
   };
   const btns = () => [...document.querySelectorAll(".view-controls__btn")];
-  const pinBtn = () => btns()[0], fsBtn = () => btns()[1], scaleBtn = () => btns()[2];
+  // SPEC 10: "Añadir texto" va encima de "Añadir pin": cuatro botones.
+  const labelBtn = () => btns()[0], pinBtn = () => btns()[1], fsBtn = () => btns()[2], scaleBtn = () => btns()[3];
   const rect = (e) => e.getBoundingClientRect();
   const ir = () => rect($(".leaflet-image-layer"));
   const imgPos = () => { const r = ir(); return [r.left, r.top, r.width, r.height]; };
@@ -83,13 +84,13 @@
   const boxes = b.map((e) => e.parentElement);
   const rects = b.map(rect);
   const separate = boxes.every((bx, i) => bx.classList.contains("leaflet-bar") && boxes.indexOf(bx) === i) && rects.every((r, i) => i === 0 || r.top > rects[i - 1].bottom);
-  ok("02_three_separate_buttons", b.length === 3 && separate && b.every((e) => e.tagName === "BUTTON"),
+  ok("02_four_separate_buttons", b.length === 4 && separate && b.every((e) => e.tagName === "BUTTON"),
     { count: b.length, tops: rects.map((r) => Math.round(r.top)), bottoms: rects.map((r) => Math.round(r.bottom)) });
 
   // 03. Encima de + / −, abajo a la derecha, sin solaparse
   const zc = rect($(".leaflet-control-zoom"));
-  ok("03_above_zoom_bottom_right", rects[2].bottom < zc.top && rects.every((r) => r.right > innerWidth / 2 && r.left >= zc.left - 4 && r.right <= zc.right + 4) && innerWidth - zc.right <= 20 && innerHeight - zc.bottom <= 20,
-    { lastBottom: rects[2].bottom, zoomTop: zc.top, rights: rects.map((r) => r.right) });
+  ok("03_above_zoom_bottom_right", rects[3].bottom < zc.top && rects.every((r) => r.right > innerWidth / 2 && r.left >= zc.left - 4 && r.right <= zc.right + 4) && innerWidth - zc.right <= 20 && innerHeight - zc.bottom <= 20,
+    { lastBottom: rects[3].bottom, zoomTop: zc.top, rights: rects.map((r) => r.right) });
 
   // 04. aria-label y title (escala en sus dos estados: ver también 06)
   const lt = (e) => [e.getAttribute("aria-label"), e.title];
@@ -222,12 +223,12 @@
   // 21. Foco visible con Tab
   document.activeElement.blur();
   const focusInfo = [];
-  for (let i = 0; i < 14 && focusInfo.length < 3; i++) {
+  for (let i = 0; i < 16 && focusInfo.length < 4; i++) {
     await tab();
     const a = document.activeElement;
     if (btns().includes(a)) focusInfo.push({ label: a.getAttribute("aria-label"), visible: a.matches(":focus-visible"), style: css(a).outlineStyle, width: css(a).outlineWidth, offset: parseFloat(css(a).outlineOffset) });
   }
-  ok("21_focus_visible", focusInfo.length === 3 && focusInfo.every((f) => f.visible && f.style !== "none" && parseFloat(f.width) >= 2 && f.offset < 0), focusInfo);
+  ok("21_focus_visible", focusInfo.length === 4 && focusInfo.every((f) => f.visible && f.style !== "none" && parseFloat(f.width) >= 2 && f.offset < 0), focusInfo);
 
   // 18. Salir del visor en pantalla completa: va al juego y sale de pantalla completa.
   // El panel (y "← Mapas") está oculto en pantalla completa: se activa el enlace por DOM, que

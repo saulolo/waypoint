@@ -53,9 +53,9 @@
   const save = async (label = "Crear") => { dbtn(label).click(); await waitFor(() => !dlg()); await sleep(500); };
   const dims = async (blob) => { const b = await createImageBitmap(blob); const d = [b.width, b.height]; b.close(); return d; };
 
-  // 2/3. Esquema v2 (el caso "perfil v1 con mapas" se prueba aparte)
+  // 2/3. Esquema v2 o posterior (SPEC 10 sube a v3; el caso "perfil v1 con mapas" se prueba aparte)
   const fresh = (await all("maps")).length + (await all("images")).length + (await all("markers")).length;
-  ok("02_db_v2_games_store", conn.version === 2 && conn.objectStoreNames.contains("games") && fresh === 0, { version: conn.version });
+  ok("02_db_v2_games_store", conn.version >= 2 && conn.objectStoreNames.contains("games") && fresh === 0, { version: conn.version });
   const mapsStore = conn.transaction("maps").objectStore("maps");
   ok("03_maps_index_gameId", mapsStore.indexNames.contains("gameId") && !mapsStore.index("gameId").unique, [...mapsStore.indexNames]);
 

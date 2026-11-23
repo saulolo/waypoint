@@ -1,5 +1,5 @@
 /*
- * Repositorio de mapas: CRUD sobre los stores "maps", "images" y "markers".
+ * Repositorio de mapas: CRUD sobre los stores "maps", "images", "markers" y "labels".
  * No toca el DOM ni conoce la UI.
  *
  * Las operaciones que tocan varios stores (add, remove) usan una sola transacción:
@@ -133,24 +133,28 @@
     });
   }
 
+  /** Borra los registros de un store con índice "mapId" que pertenecen a un mapa. */
+  function deleteByMap(store, mapId) {
+    var keysRequest = store.index("mapId").getAllKeys(mapId);
+    keysRequest.onsuccess = function () {
+      keysRequest.result.forEach(function (key) {
+        store.delete(key);
+      });
+    };
+  }
+
   /**
-   * Borra un mapa, su imagen y todos sus marcadores en una sola transacción.
+   * Borra un mapa, su imagen y todos sus marcadores y textos en una sola transacción.
    * @param {string} id
    * @returns {Promise<void>}
    */
   function remove(id) {
-    return transaction([STORES.maps, STORES.images, STORES.markers], "readwrite").then(function (tx) {
+    var names = [STORES.maps, STORES.images, STORES.markers, STORES.labels];
+    return transaction(names, "readwrite").then(function (tx) {
       tx.objectStore(STORES.maps).delete(id);
       tx.objectStore(STORES.images).delete(id);
-
-      var markers = tx.objectStore(STORES.markers);
-      var keysRequest = markers.index("mapId").getAllKeys(id);
-      keysRequest.onsuccess = function () {
-        keysRequest.result.forEach(function (markerId) {
-          markers.delete(markerId);
-        });
-      };
-
+      deleteByMap(tx.objectStore(STORES.markers), id);
+      deleteByMap(tx.objectStore(STORES.labels), id);
       return done(tx);
     });
   }

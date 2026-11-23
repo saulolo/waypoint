@@ -1,6 +1,6 @@
 /*
  * Repositorio de juegos: CRUD sobre el store "games".
- * El borrado en cascada toca también "maps", "images" y "markers".
+ * El borrado en cascada toca también "maps", "images", "markers" y "labels".
  * No toca el DOM ni conoce la UI.
  *
  * Las operaciones que tocan varios stores (remove) usan una sola transacción:
@@ -107,17 +107,28 @@
     });
   }
 
+  /** Borra los registros de un store con índice "mapId" que pertenecen a un mapa. */
+  function deleteByMap(store, mapId) {
+    var keysRequest = store.index("mapId").getAllKeys(mapId);
+    keysRequest.onsuccess = function () {
+      keysRequest.result.forEach(function (key) {
+        store.delete(key);
+      });
+    };
+  }
+
   /**
-   * Borra un juego y, en cascada, sus mapas, imágenes y marcadores, en una sola transacción.
+   * Borra un juego y, en cascada, sus mapas, imágenes, marcadores y textos, en una sola transacción.
    * @param {string} id
    * @returns {Promise<void>}
    */
   function remove(id) {
-    var names = [STORES.games, STORES.maps, STORES.images, STORES.markers];
+    var names = [STORES.games, STORES.maps, STORES.images, STORES.markers, STORES.labels];
     return transaction(names, "readwrite").then(function (tx) {
       var maps = tx.objectStore(STORES.maps);
       var images = tx.objectStore(STORES.images);
       var markers = tx.objectStore(STORES.markers);
+      var labels = tx.objectStore(STORES.labels);
 
       tx.objectStore(STORES.games).delete(id);
 
@@ -126,13 +137,8 @@
         mapKeys.result.forEach(function (mapId) {
           maps.delete(mapId);
           images.delete(mapId);
-
-          var markerKeys = markers.index("mapId").getAllKeys(mapId);
-          markerKeys.onsuccess = function () {
-            markerKeys.result.forEach(function (markerId) {
-              markers.delete(markerId);
-            });
-          };
+          deleteByMap(markers, mapId);
+          deleteByMap(labels, mapId);
         });
       };
 

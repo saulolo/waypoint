@@ -7,6 +7,7 @@
  *     map,         // { id, gameId, width, height }
  *     freeLeft,    // () → px que tapa el panel izquierdo (0 si está contraído u oculto)
  *     pins,        // capa de pines guardados (pinLayer): modo "añadir pin" con setPlacing
+ *     labels,      // capa de textos guardados (labelLayer, SPEC 10): también en modo colocar
  *     onSaved,     // (marker) → el visor lo añade a la capa de pines guardados
  *     onClose,     // (reason: "save" | "cancel" | "unmount") → el visor devuelve el foco
  *   });
@@ -22,6 +23,7 @@
  * sustituye su icono sin repetir la caída. Se mueve arrastrándolo (sin mover el mapa) o con un clic
  * simple en el mapa; nunca sale de la imagen. Mientras tanto, los pines guardados no abren popup:
  * un clic sin arrastre sobre ellos cuenta como clic en el mapa, y arrastrarlos los mueve a ellos.
+ * Los textos guardados (SPEC 10) se comportan igual.
  *
  * El botón "Icono" abre el selector (.pin-picker), un segundo panel a la izquierda del de pin, con
  * los iconos por categoría (plegables: al abrir, solo la del icono actual) y la barra de tamaño.
@@ -190,7 +192,7 @@
 
     // Acciones
     var actions = el("div", "dialog__actions pin-editor__actions");
-    var cancelButton = el("button", "btn btn--ghost", "Cancelar");
+    var cancelButton = el("button", "btn btn--cancel", "Cancelar");
     cancelButton.type = "button";
     var saveButton = el("button", "btn btn--primary", "Guardar");
     saveButton.type = "button";
@@ -666,6 +668,9 @@
       if (options.pins) {
         options.pins.setPlacing(null);
       }
+      if (options.labels) {
+        options.labels.setPlacing(null);
+      }
       if (draft) {
         draft.marker.remove();
         draft = null;
@@ -692,6 +697,9 @@
       leafletMap.on("click", onMapClick);
       if (options.pins) {
         options.pins.setPlacing(placeDraft);
+      }
+      if (options.labels) {
+        options.labels.setPlacing(placeDraft);
       }
       document.addEventListener("keydown", onKeyDown);
       nameInput.focus();

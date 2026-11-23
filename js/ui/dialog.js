@@ -61,7 +61,7 @@
     }
 
     var actions = el("div", "dialog__actions");
-    var cancel = button(options.cancelLabel || "Cancelar", "btn--ghost", "cancel");
+    var cancel = button(options.cancelLabel || "Cancelar", "btn--cancel", "cancel");
     var confirm = button(options.confirmLabel || "Aceptar", options.danger ? "btn--danger" : "btn--primary", "confirm");
     actions.appendChild(cancel);
     actions.appendChild(confirm);
@@ -104,6 +104,8 @@
    */
   function confirm(options) {
     var ui = openDialog(options);
+    // Solo título, mensaje y dos botones: versión compacta (SPEC 10).
+    ui.dialog.classList.add("dialog--compact");
     // Foco en "Cancelar": la opción segura por defecto.
     ui.cancelButton.focus();
     return ui.closed.then(function (value) {

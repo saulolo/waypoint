@@ -102,9 +102,10 @@ body.is-viewer {
   display: none;
 }
 
-/* Añadiendo un pin (SPEC 08): el panel de pin ocupa la esquina derecha; los controles de vista y
+/* Añadiendo un pin (SPEC 08) o un texto (SPEC 10): el panel ocupa la esquina derecha; los controles de vista y
    + / − se ocultan. El zoom sigue con la rueda y el doble clic. */
-.viewer--adding-pin .leaflet-bottom.leaflet-right {
+.viewer--adding-pin .leaflet-bottom.leaflet-right,
+.viewer--adding-label .leaflet-bottom.leaflet-right {
   display: none;
 }
 

@@ -187,6 +187,20 @@ p {
   --btn-glow: var(--shadow-btn-magenta);
 }
 
+/* Botones por grupo de acción (SPEC 10): Confirmar = primary (cian), Cancelar = violeta,
+   Editar = dorado, Borrar = danger (magenta), Neutro = ghost (gris). */
+.btn--cancel {
+  --btn-color: var(--color-neon-purple);
+  --btn-inner: var(--color-btn-inner-purple);
+  --btn-glow: var(--shadow-btn-purple);
+}
+
+.btn--edit {
+  --btn-color: var(--color-neon-gold);
+  --btn-inner: var(--color-btn-inner-gold);
+  --btn-glow: var(--shadow-btn-gold);
+}
+
 .btn--ghost {
   --btn-color: var(--color-text-faint);
   --btn-inner: transparent;

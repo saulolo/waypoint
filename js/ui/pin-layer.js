@@ -176,7 +176,7 @@
       }
       var actions = el("div", "pin-popup__actions");
       // EDITAR: solo el botón, sin función todavía (editar pines es de una spec futura).
-      var edit = el("button", "btn btn--ghost pin-popup__edit", "Editar");
+      var edit = el("button", "btn btn--edit pin-popup__edit", "Editar");
       edit.type = "button";
       actions.appendChild(edit);
       var del = el("button", "btn btn--danger pin-popup__delete", "Borrar");
