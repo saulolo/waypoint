@@ -1,7 +1,7 @@
 /*
- * Controles del visor (SPEC 06): añadir pin (abre el panel de pin, SPEC 08), pantalla completa y
- * un botón de escala que alterna entre tamaño real (1:1) y ajustar a la ventana. Tres botones
- * separados, cada uno en su propia caja.
+ * Controles del visor (SPEC 06): añadir texto (abre el panel de texto, SPEC 10), añadir pin (abre
+ * el panel de pin, SPEC 08), pantalla completa y un botón de escala que alterna entre tamaño real
+ * (1:1) y ajustar a la ventana. Cuatro botones separados, cada uno en su propia caja.
  * Es un L.Control en la
  * esquina inferior derecha; viewer-view.js lo añade después del de zoom, porque en las esquinas
  * de abajo Leaflet apila el último añadido arriba.
@@ -19,6 +19,7 @@
 
   var SVG_NS = "http://www.w3.org/2000/svg";
 
+  var LABEL_ADD_LABEL = "Añadir texto";
   var LABEL_ADD_PIN = "Añadir pin";
   var LABEL_FULLSCREEN_ENTER = "Pantalla completa";
   var LABEL_FULLSCREEN_EXIT = "Salir de pantalla completa";
@@ -33,6 +34,9 @@
 
   // Pin de mapa con punto central y un "+" arriba a la derecha, en una rejilla de 24×24.
   var PATH_PIN = "M11 21S5 15.6 5 10.5a6 6 0 0 1 12 0C17 15.6 11 21 11 21zM9 10.5a2 2 0 1 0 4 0 2 2 0 1 0-4 0M19 2v6M16 5h6";
+
+  // Una "T" con un "+" arriba a la derecha, en la misma rejilla de 24×24 que el pin.
+  var PATH_LABEL = "M3 7h12M9 7v14M19 2v6M16 5h6";
 
   function svgIcon(pathData, grid) {
     grid = grid || 16;
@@ -63,11 +67,13 @@
 
   /**
    * Crea el control. Hay que añadirlo al mapa con control.addTo(map).
-   * @param {{ onToggleFullscreen: function, onFit: function, onActualSize: function, onAddPin?: function }} handlers
-   *   onAddPin es opcional: sin él, el botón de pin no hace nada (SPEC 08 lo conecta).
-   * @returns {L.Control} con setFullscreen(isFullscreen), setActualSize(isActualSize) y focusAddPin()
+   * @param {{ onToggleFullscreen: function, onFit: function, onActualSize: function, onAddPin?: function, onAddLabel?: function }} handlers
+   *   onAddPin y onAddLabel son opcionales: sin ellos, sus botones no hacen nada.
+   * @returns {L.Control} con setFullscreen(isFullscreen), setActualSize(isActualSize), focusAddPin()
+   *   y focusAddLabel()
    */
   function create(handlers) {
+    var labelBtn = null;
     var pinBtn = null;
     var fullscreenBtn = null;
     var fullscreenIcon = null;
@@ -95,6 +101,14 @@
         // Contenedor sin marco: cada botón va en su propia .leaflet-bar, separado de los demás.
         var bar = L.DomUtil.create("div", "view-controls");
 
+        labelBtn = button(LABEL_ADD_LABEL);
+        labelBtn.appendChild(svgIcon(PATH_LABEL, 24));
+        labelBtn.addEventListener("click", function () {
+          if (handlers.onAddLabel) {
+            handlers.onAddLabel();
+          }
+        });
+
         pinBtn = button(LABEL_ADD_PIN);
         pinBtn.appendChild(svgIcon(PATH_PIN, 24));
         pinBtn.addEventListener("click", function () {
@@ -121,7 +135,7 @@
           }
         });
 
-        [pinBtn, fullscreenBtn, scaleBtn].forEach(function (btn) {
+        [labelBtn, pinBtn, fullscreenBtn, scaleBtn].forEach(function (btn) {
           var block = L.DomUtil.create("div", "leaflet-bar view-controls__block", bar);
           block.appendChild(btn);
         });
@@ -145,6 +159,13 @@
       focusAddPin: function () {
         if (pinBtn) {
           pinBtn.focus();
+        }
+      },
+
+      /** Devuelve el foco al botón "Añadir texto" (al cerrar el panel de texto). */
+      focusAddLabel: function () {
+        if (labelBtn) {
+          labelBtn.focus();
         }
       },
 

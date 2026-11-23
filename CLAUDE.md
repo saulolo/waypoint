@@ -25,7 +25,7 @@ Un archivo nuevo se añade a `index.html` **en orden de capa**: un script solo p
 
 Las vistas exponen `mount(container, params)` y devuelven una función de desmontaje; el router la llama al cambiar de ruta. Ahí se libera todo: listeners de `window`, object URLs y el mapa Leaflet.
 
-El modelo de datos (stores `maps`, `images`, `markers`), la conversión de coordenadas y el orden de la biblioteca (alfabético desde SPEC 07; SPEC 01 lo definía por último abierto) están en `specs/01-biblioteca-de-mapas.md` → *Modelo de datos*. Desde el esquema v2 (SPEC 03) hay además el store `games` y cada mapa lleva `gameId` (índice `gameId`); ver `specs/03-carpetas-de-juegos.md` → *Modelo de datos*. El store `markers` (keyPath `id`, índice `mapId`) se usa desde SPEC 08: `{ id, mapId, x, y, name, note, icon, color, size, found, createdAt }`, con `x`/`y` relativas 0–1 a la imagen; ver `specs/08-pines-en-el-mapa.md` → *Modelo de datos*. Desde SPEC 09, `found` (ausente = `false`, sin migración; `markerService.setFound`) y, en `maps`, `hideFound` y `hidePending` (ausentes = `false`; `mapService.setHideFound` / `setHidePending`, preferencias de vista que no tocan `updatedAt`); ver `specs/09-pines-encontrados.md`. "Último usado" no se guarda: es el marcador con mayor `createdAt` entre los mapas del juego (`markerService.lastStyle`). Las migraciones de esquema van en `MIGRATIONS[version]` de `js/data/db.js` y reciben `(db, tx)`; `MIGRATIONS[2]` vacía `maps`, `images` y `markers`.
+El modelo de datos (stores `maps`, `images`, `markers`), la conversión de coordenadas y el orden de la biblioteca (alfabético desde SPEC 07; SPEC 01 lo definía por último abierto) están en `specs/01-biblioteca-de-mapas.md` → *Modelo de datos*. Desde el esquema v2 (SPEC 03) hay además el store `games` y cada mapa lleva `gameId` (índice `gameId`); ver `specs/03-carpetas-de-juegos.md` → *Modelo de datos*. El store `markers` (keyPath `id`, índice `mapId`) se usa desde SPEC 08: `{ id, mapId, x, y, name, note, icon, color, size, found, createdAt }`, con `x`/`y` relativas 0–1 a la imagen; ver `specs/08-pines-en-el-mapa.md` → *Modelo de datos*. Desde SPEC 09, `found` (ausente = `false`, sin migración; `markerService.setFound`) y, en `maps`, `hideFound` y `hidePending` (ausentes = `false`; `mapService.setHideFound` / `setHidePending`, preferencias de vista que no tocan `updatedAt`); ver `specs/09-pines-encontrados.md`. "Último usado" no se guarda: es el marcador con mayor `createdAt` entre los mapas del juego (`markerService.lastStyle`). Desde el esquema v3 (SPEC 10) hay además el store `labels` (keyPath `id`, índice `mapId`): `{ id, mapId, x, y, text, note, color, size, createdAt }`, con los mismos colores que los pines y `size` 8–32 px par; ver `specs/10-textos-en-el-mapa.md` → *Modelo de datos*. Los textos no tienen "Último usado": el borrador empieza siempre en `labelService.DEFAULT_STYLE` (Blanco, 12 px). Las migraciones de esquema van en `MIGRATIONS[version]` de `js/data/db.js` y reciben `(db, tx)`; `MIGRATIONS[2]` vacía `maps`, `images` y `markers`; `MIGRATIONS[3]` solo crea `labels`.
 
 ## Convenciones
 
@@ -37,8 +37,11 @@ El modelo de datos (stores `maps`, `images`, `markers`), la conversión de coord
 - Errores de dominio como clases propias (`InvalidImageError`, `MapNotFoundError`, `InvalidNameError`, `DbUnavailableError`); la UI decide el aviso con `instanceof` o `mapService.isQuotaError()`.
 - Errores de juego: `GameNotFoundError` e `InvalidNameError` en `game-service.js` (clase aparte de la de `map-service.js`: usa `instanceof` contra la del servicio que corresponda).
 - Errores de pin: `InvalidMarkerError` en `marker-service.js` (posición fuera de 0–1, color, icono o tamaño no válidos, nombre o nota demasiado largos, pin inexistente al mover). `markerService.isQuotaError` es el de `mapService`.
+- Errores de texto: `InvalidLabelError` en `label-service.js` (posición fuera de 0–1, texto vacío o de más de 40, nota de más de 500, color o tamaño no válidos, texto inexistente al mover). `labelService.isQuotaError` es el de `mapService`.
+- Botones por grupo (SPEC 10): confirmar `.btn--primary` (cian), cancelar `.btn--cancel` (violeta), editar `.btn--edit` (dorado), borrar `.btn--danger` (magenta), navegación y secundarios `.btn--ghost` (gris). Un botón nuevo usa la clase de su grupo, no `.btn--ghost` para "Cancelar".
+- `dialog.confirm` añade `.dialog--compact` (320 px, textos y botones pequeños); los diálogos con campos usan el `.dialog` normal (440 px).
 - Avisos al usuario con `Waypoint.ui.notice.show()`; diálogos con `Waypoint.ui.dialog.{rename,confirm}` y `Waypoint.ui.gameDialog.open()` (crear juego / cambiar portada; usa `dialog.open`). `prompt()`/`confirm()` nativos no se usan.
-- Borrar un juego es una sola transacción sobre `games`, `maps`, `images` y `markers` (`gamesRepository.remove`); borrar un mapa, sobre `maps`, `images` y `markers` (`mapsRepository.remove`). El nº de mapas por juego se cuenta con `index("gameId").count()`.
+- Borrar un juego es una sola transacción sobre `games`, `maps`, `images`, `markers` y `labels` (`gamesRepository.remove`); borrar un mapa, sobre `maps`, `images`, `markers` y `labels` (`mapsRepository.remove`). El nº de mapas por juego se cuenta con `index("gameId").count()`.
 
 ## Gotchas
 
@@ -66,16 +69,24 @@ El modelo de datos (stores `maps`, `images`, `markers`), la conversión de coord
   - Mover (borrador y guardados) es el arrastre de `L.Marker` con `autoPan: false`, recolocado dentro de la imagen en cada `drag`. Leaflet no dispara `click` tras un arrastre: así soltar no abre el popup ni mueve el borrador. Guardar la posición es `markerService.move` en `dragend`; si falla, el pin vuelve.
   - La caída del borrador anima `.pin-glyph`, no el contenedor (Leaflet coloca el contenedor con `transform`); la distancia va en `--pin-drop-from`. Al caer evita los guardados con una búsqueda en anillos (`findFreeSpot`, cajas de `pins.boxes()`).
   - `.leaflet-popup-content p` trae `margin`: `.pin-popup .pin-popup__note` lo anula con más especificidad.
+- **Textos** (SPEC 10): `js/ui/label-layer.js` pinta los guardados y `js/ui/label-editor.js` es el modo "añadir texto" (`.label-editor`, `.viewer--adding-label`). Siguen el patrón de los pines (panel `aside.dialog` hermano de `.viewer__stage`, arrastre de `L.Marker`, `setPlacing`), con estas diferencias:
+  - El `L.divIcon` es de tamaño 0, anclado en el punto: el ancho del texto no se conoce al crearlo. `.label-glyph` se centra con la propiedad `translate: -50% -50%`, no con `transform`, para que la caída (`pin-drop`, que anima `transform`) se sume al centrado. `.label-text` va dentro, en flujo, con el tamaño de letra en línea.
+  - Contorno con `-webkit-text-stroke` y `paint-order: stroke fill` (variable `--label-outline`, clara con Negro).
+  - Sin tooltip, sin búsqueda de hueco y sin filtros: `pins.boxes()` no los ve.
+  - En los dos modos de añadir, `labels.setPlacing(fn)` lo llama el editor activo (`pin-editor.js` recibe `labels` como opción). Los pines guardados no cambian en modo "añadir texto".
+  - Solo un modo de añadir a la vez: `viewer-view.js` no abre uno si el otro está abierto.
 - Press Start 2P no dibuja bien vocales acentuadas en mayúsculas ("VACÍA" → "VACıA"). Aceptado en SPEC 02.
 
 ## Verificar cambios
 
 Verifica en el navegador con `tools/cdp-eval.mjs` (Chrome headless vía CDP; su cabecera documenta argumentos, variables y la entrada real de ratón/teclado). Playwright MCP bloquea `file://` y `chrome --dump-dom` congela IndexedDB, así que no sirven aquí.
 
-- Regresión: `tools/acceptance/spec-01.js`, `spec-02.js`, `spec-03.js`, `spec-04.js`, `spec-05.js`, `spec-06.js`, `spec-07.js`, `spec-08.js` y `spec-09.js`, cada uno con un `WP_PROFILE` vacío. Crean un juego por servicio y trabajan dentro de `#/game/<id>`. Cada spec nueva añade su `tools/acceptance/spec-NN.js`.
+- Regresión: `tools/acceptance/spec-01.js`, `spec-02.js`, `spec-03.js`, `spec-04.js`, `spec-05.js`, `spec-06.js`, `spec-07.js`, `spec-08.js`, `spec-09.js` y `spec-10.js`, cada uno con un `WP_PROFILE` vacío. Crean un juego por servicio y trabajan dentro de `#/game/<id>`. Cada spec nueva añade su `tools/acceptance/spec-NN.js`.
 - La entrada sintética (`new KeyboardEvent`) no cierra un `<dialog>` con Esc: usa `window.cdpKey("Escape")`.
 - Arrastrar un `L.Marker` con `Input.dispatchMouseEvent`: manda un último `mouseMoved` en el punto final y espera ~100 ms antes de soltar; si no, headless puede perder el último movimiento y el pin se queda corto (ver `drag` en `spec-08.js`).
 - El botón de pin abre el panel de pin, que oculta los controles de vista: `spec-06.js` anula `Waypoint.ui.pinEditor.open` mientras comprueba que los clics en ese botón no llegan al mapa.
+- Desde SPEC 10 el primer botón de vista es "Añadir texto": busca los botones por `aria-label` (`.view-controls__btn[aria-label="Añadir pin"]`), no por índice.
+- `getComputedStyle` de un nodo ya quitado del DOM (un `<dialog>` cerrado) devuelve valores vacíos: lee los estilos antes de cerrar.
 - Enter sintético con `Input.dispatchKeyEvent` solo activa un botón si el `keyDown` lleva `text: ""` (Espacio, `text: " "`); `cdpKey("Enter")` ya lo hace.
 - Un clic "en el mapa" para cerrar un popup debe caer fuera de él (el popup sale encima del pin): usa una esquina lejana.
 - `cdpKey` solo conoce Escape y Enter. Para un Tab real (recorrido de foco, `inert`) usa `cdpInput` con `Input.dispatchKeyEvent` (`key: "Tab"`, `windowsVirtualKeyCode: 9`); ver `tab` en `spec-05.js`.

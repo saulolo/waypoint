@@ -188,7 +188,7 @@
   // 20 borrador cae en el centro con un encontrado oculto en el centro
   await go(mC.id);
   const cMap = () => { const r = $(".viewer__stage").getBoundingClientRect(); return { cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; };
-  await clickEl($$(".view-controls__btn")[0], 900);
+  await clickEl($('.view-controls__btn[aria-label="Añadir pin"]'), 900);
   const draftPos = () => { const d = $(".pin--draft"); if (!d) return null; const r = d.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
   await waitFor(() => draftPos()); await sleep(900);
   const base = draftPos();
@@ -198,19 +198,19 @@
   const fp = await mk.create(mC.id, { x: rel.x, y: rel.y, name: "centro", ...st }); await mk.setFound(fp.id, true);
   await ms.setHideFound(mC.id, true);
   await go(mC.id);
-  await clickEl($$(".view-controls__btn")[0], 900); await waitFor(() => draftPos()); await sleep(900);
+  await clickEl($('.view-controls__btn[aria-label="Añadir pin"]'), 900); await waitFor(() => draftPos()); await sleep(900);
   const withHidden = draftPos();
   ok("20_borrador_ignora_ocultos", withHidden && Math.abs(withHidden.x - base.x) <= 2 && Math.abs(withHidden.y - base.y) <= 2, { base, withHidden, pins: pins().length });
   await esc();
   // control: sin ocultar, el borrador se aparta
   await ms.setHideFound(mC.id, false); await go(mC.id);
-  await clickEl($$(".view-controls__btn")[0], 900); await waitFor(() => draftPos()); await sleep(900);
+  await clickEl($('.view-controls__btn[aria-label="Añadir pin"]'), 900); await waitFor(() => draftPos()); await sleep(900);
   const withVisible = draftPos();
   ok("20b_control_visible_desplaza", withVisible && (Math.abs(withVisible.x - base.x) > 2 || Math.abs(withVisible.y - base.y) > 2), { withVisible });
   await esc();
   // 07b guardar desde el editor real
   await go(mB.id);
-  await clickEl($$(".view-controls__btn")[0], 900); await waitFor(() => draftPos()); await sleep(900);
+  await clickEl($('.view-controls__btn[aria-label="Añadir pin"]'), 900); await waitFor(() => draftPos()); await sleep(900);
   const saveBtn = $$("aside.pin-editor button").find((x) => /guardar/i.test(x.textContent)); await clickEl(saveBtn, 700);
   const mBmarkers = await mk.listByMap(mB.id);
   ok("07b_editor_guarda_found_false", mBmarkers.length === 2 && mBmarkers.filter((m) => m.found === false).length === 1, { n: mBmarkers.length, found: mBmarkers.map((m) => m.found) });

@@ -1,0 +1,114 @@
+/*
+ * Textos del mapa (SPEC 10).
+ * Mismos colores que los pines (tokens --color-pin-*); el contorno usa --label-outline
+ * (oscuro por defecto; claro para el color Negro).
+ */
+
+/* --- Marcador en el mapa (L.divIcon de tamaño 0, anclado en el punto) --- */
+
+.leaflet-marker-icon.label {
+  border: 0;
+  background: none;
+  overflow: visible;
+  cursor: grab;
+  --label-outline: var(--color-pin-outline-dark);
+}
+
+.leaflet-dragging .leaflet-marker-icon.label {
+  cursor: grabbing;
+}
+
+/* Centro del texto = punto guardado: el centrado va en la propiedad `translate`, así la caída del
+   borrador (animation con `transform`) se suma a él sin pisarlo. Leaflet coloca el contenedor
+   con transform. */
+.label-glyph {
+  position: absolute;
+  top: 0;
+  left: 0;
+  translate: -50% -50%;
+}
+
+/* Una línea, tal cual se escribió, sin fondo. El tamaño de letra va en línea (px de pantalla:
+   no cambia con el zoom). */
+.label-text {
+  display: block;
+  color: currentColor;
+  font-family: var(--font-pixel);
+  font-weight: var(--font-weight-normal);
+  line-height: 1;
+  white-space: nowrap;
+  text-transform: none;
+  -webkit-text-stroke: 3px var(--label-outline);
+  paint-order: stroke fill;
+}
+
+/* --- Colores --- */
+
+.label--gold { color: var(--color-pin-gold); }
+.label--white { color: var(--color-pin-white); }
+.label--red { color: var(--color-pin-red); }
+.label--orange { color: var(--color-pin-orange); }
+.label--green { color: var(--color-pin-green); }
+.label--cyan { color: var(--color-pin-cyan); }
+.label--violet { color: var(--color-pin-violet); }
+
+.leaflet-marker-icon.label--black {
+  color: var(--color-pin-black);
+  --label-outline: var(--color-pin-outline-light);
+}
+
+/* --- Borrador --- */
+
+.leaflet-marker-icon.label--draft {
+  cursor: grab;
+}
+
+/* Con "Texto" vacío muestra "Texto", atenuado. */
+.label--empty .label-text {
+  opacity: var(--label-placeholder-opacity);
+}
+
+/* Misma caída que el borrador del pin (keyframes en css/effects.css); distancia en --pin-drop-from. */
+.label--dropping .label-glyph {
+  animation: pin-drop 400ms both;
+}
+
+/* --- Popup (reutiliza el estilo arcade de .pin-popup) --- */
+
+.label-popup .label-popup__text {
+  padding-right: var(--space-4); /* sitio para la × del popup */
+}
+
+.label-popup .label-popup__actions {
+  justify-content: flex-end;
+}
+
+/* --- Panel de texto (no modal; estilo de .dialog, ancho de .pin-editor) --- */
+
+/* Hermano de .viewer__stage, anclado a la derecha. Con scroll interno si no cabe. */
+.label-editor {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: 2;
+  box-sizing: border-box;
+  width: min(var(--pin-editor-width), calc(100vw - 2 * var(--space-4)));
+  max-height: calc(100% - 2 * var(--space-4));
+  overflow-y: auto;
+  scrollbar-color: var(--color-line) transparent;
+}
+
+.label-editor__body {
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.label-editor__title {
+  margin: 0;
+}
+
+/* Foco visible hacia dentro (el panel lleva clip-path). */
+.label-editor .dialog__input:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: -2px;
+}

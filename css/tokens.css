@@ -63,8 +63,12 @@
   /* Botones y campos */
   --color-btn-inner-cyan: rgba(0, 245, 255, 0.25);
   --color-btn-inner-magenta: rgba(255, 0, 110, 0.25);
+  --color-btn-inner-purple: rgba(170, 0, 255, 0.25); /* Cancelar (SPEC 10) */
+  --color-btn-inner-gold: rgba(255, 207, 58, 0.25); /* Editar (SPEC 10) */
   --shadow-btn-cyan: 0 0 14px rgba(0, 245, 255, 0.55), inset 0 0 8px rgba(0, 245, 255, 0.35);
   --shadow-btn-magenta: 0 0 14px rgba(255, 0, 110, 0.55), inset 0 0 8px rgba(255, 0, 110, 0.35);
+  --shadow-btn-purple: 0 0 14px rgba(170, 0, 255, 0.55), inset 0 0 8px rgba(170, 0, 255, 0.35);
+  --shadow-btn-gold: 0 0 14px rgba(255, 207, 58, 0.55), inset 0 0 8px rgba(255, 207, 58, 0.35);
   --shadow-input-focus: 0 0 12px rgba(0, 245, 255, 0.35);
 
   /* Hero de la biblioteca */
@@ -154,6 +158,7 @@
   --pin-editor-width: 280px;
   --pin-picker-width: 320px;
   --pin-found-opacity: 0.4;
+  --label-placeholder-opacity: 0.5;
 
   /* Transiciones */
   --transition-fast: 120ms ease;

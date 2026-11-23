@@ -1,6 +1,6 @@
 /*
  * Conexión a IndexedDB.
- * Base "waypoint", esquema v2: stores "games", "maps", "images" y "markers".
+ * Base "waypoint", esquema v3: stores "games", "maps", "images", "markers" y "labels".
  * No toca el DOM ni conoce la UI.
  *
  * Migraciones: añadir un caso en MIGRATIONS por cada versión nueva y subir DB_VERSION.
@@ -10,13 +10,14 @@
   "use strict";
 
   var DB_NAME = "waypoint";
-  var DB_VERSION = 2;
+  var DB_VERSION = 3;
 
   var STORES = {
     games: "games",
     maps: "maps",
     images: "images",
     markers: "markers",
+    labels: "labels",
   };
 
   var MIGRATIONS = {
@@ -42,6 +43,12 @@
       db.createObjectStore(STORES.games, { keyPath: "id" });
 
       tx.objectStore(STORES.maps).createIndex("gameId", "gameId", { unique: false });
+    },
+
+    // SPEC 10: textos sobre el mapa. Aditiva: no toca los demás stores.
+    3: function (db) {
+      var labels = db.createObjectStore(STORES.labels, { keyPath: "id" });
+      labels.createIndex("mapId", "mapId", { unique: false });
     },
   };
 

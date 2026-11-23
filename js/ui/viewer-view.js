@@ -24,8 +24,11 @@
  *   - Filtro de pines (SPEC 09): dos botones en el panel, bajo el juego ("Pendientes" y "Encontrados"),
  *     independientes; se guardan por mapa (mapService.setHideFound / setHidePending) y se aplican con
  *     pins.setHideFound / setHidePending, también con el panel contraído.
+ *   - Textos (SPEC 10): Waypoint.ui.labelLayer pinta los textos guardados; los filtros de pines no
+ *     les afectan. El botón "Añadir texto" abre Waypoint.ui.labelEditor (panel derecho y borrador;
+ *     .viewer--adding-label). Solo un modo de añadir a la vez.
  * Al salir se quitan el handler de rueda y el de fullscreenchange, se sale de pantalla completa,
- * se cancela el panel de pin si está abierto, se destruye la capa de pines,
+ * se cancelan los paneles de pin y de texto si están abiertos, se destruyen las capas de pines y de textos,
  * se quita el listener de pointerdown del selector, se destruye el mapa Leaflet y se revocan los
  * object URLs de la imagen y de las miniaturas del selector.
  *
@@ -42,6 +45,8 @@
   var viewControls = Waypoint.ui.viewControls;
   var pinLayer = Waypoint.ui.pinLayer;
   var pinEditor = Waypoint.ui.pinEditor;
+  var labelLayer = Waypoint.ui.labelLayer;
+  var labelEditor = Waypoint.ui.labelEditor;
 
   var MAX_ZOOM = 2; // 2^2 = 4× el tamaño real
   var MIN_ZOOM_BELOW_FIT = 2; // zoom mínimo = fitZoom − 2 → 1/4 del tamaño de ajuste
@@ -82,6 +87,8 @@
     var detachWheel = null;
     var controls = null; // L.Control de vista (pantalla completa, ajustar, 1:1)
     var pins = null; // capa de pines guardados (pin-layer.js)
+    var labels = null; // capa de textos guardados (label-layer.js)
+    var closeLabelEditor = null; // cierre del modo "añadir texto" mientras está abierto (label-editor.js)
     var closeEditor = null; // cierre del modo "añadir pin" mientras está abierto (pin-editor.js)
 
     var root = el("section", "viewer");
@@ -293,6 +300,9 @@
       //
       controls = viewControls
         .create({
+          onAddLabel: function () {
+            openLabelEditor(map);
+          },
           onAddPin: function () {
             openPinEditor(map);
           },
@@ -353,12 +363,22 @@
         filterButtons[item.key].disabled = false;
       });
       pins.load();
+
+      // Textos guardados (SPEC 10): si la carga falla, avisa y el mapa sigue abierto.
+      labels = labelLayer.create(leafletMap, map);
+      labels.load();
+    }
+
+    // El panel izquierdo tapa el mapa solo si está expandido y fuera de pantalla completa.
+    function freeLeft() {
+      var hidden = !panelExpanded || root.classList.contains("viewer--fullscreen");
+      return hidden ? 0 : panel.offsetWidth;
     }
 
     // Modo "añadir pin": panel derecho y borrador. Los controles de la esquina se ocultan mientras
     // dura (.viewer--adding-pin); al cancelar vuelven y el foco regresa al botón "Añadir pin".
     function openPinEditor(map) {
-      if (closeEditor) {
+      if (closeEditor || closeLabelEditor) {
         return;
       }
       closeEditor = pinEditor.open({
@@ -366,11 +386,8 @@
         leafletMap: leafletMap,
         map: map,
         pins: pins,
-        // El panel izquierdo tapa el mapa solo si está expandido y fuera de pantalla completa.
-        freeLeft: function () {
-          var hidden = !panelExpanded || root.classList.contains("viewer--fullscreen");
-          return hidden ? 0 : panel.offsetWidth;
-        },
+        labels: labels,
+        freeLeft: freeLeft,
         onSaved: function (marker) {
           if (pins) {
             // Los pines nacen pendientes: con "Pendientes" apagado el nuevo no se vería.
@@ -384,6 +401,32 @@
           closeEditor = null;
           if (reason !== "unmount" && controls) {
             controls.focusAddPin();
+          }
+        },
+      });
+    }
+
+    // Modo "añadir texto" (SPEC 10): como el de pin, con .viewer--adding-label; al cancelar el foco
+    // regresa al botón "Añadir texto".
+    function openLabelEditor(map) {
+      if (closeEditor || closeLabelEditor) {
+        return;
+      }
+      closeLabelEditor = labelEditor.open({
+        root: root,
+        leafletMap: leafletMap,
+        map: map,
+        freeLeft: freeLeft,
+        labels: labels,
+        onSaved: function (label) {
+          if (labels) {
+            labels.add(label);
+          }
+        },
+        onClose: function (reason) {
+          closeLabelEditor = null;
+          if (reason !== "unmount" && controls) {
+            controls.focusAddLabel();
           }
         },
       });
@@ -597,14 +640,22 @@
         detachWheel();
         detachWheel = null;
       }
-      // Cambiar de ruta con el panel de pin abierto cancela sin preguntar.
+      // Cambiar de ruta con el panel de pin o de texto abierto cancela sin preguntar.
       if (closeEditor) {
         closeEditor();
         closeEditor = null;
       }
+      if (closeLabelEditor) {
+        closeLabelEditor();
+        closeLabelEditor = null;
+      }
       if (pins) {
         pins.destroy();
         pins = null;
+      }
+      if (labels) {
+        labels.destroy();
+        labels = null;
       }
       if (leafletMap) {
         leafletMap.remove();

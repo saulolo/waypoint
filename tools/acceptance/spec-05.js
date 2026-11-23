@@ -136,7 +136,7 @@
   // 10. Contraído, Tab no lleva a "← Mapas"
   document.activeElement.blur();
   const focused = [];
-  for (let i = 0; i < 8; i++) { await tab(); focused.push(document.activeElement); }
+  for (let i = 0; i < 10; i++) { await tab(); focused.push(document.activeElement); }
   ok("10_collapsed_no_focus", !focused.some((e) => e.closest(".viewer__panel")) && focused.includes(toggle()),
     focused.map((e) => e.className || e.tagName));
 
