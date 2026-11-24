@@ -17,6 +17,8 @@
 //   26  grep de colores literales fuera de css/tokens.css (ver spec-02.js).
 //   27  spec-01.js a spec-10.js y este script pasan con un WP_PROFILE vacío.
 (async () => {
+  // Desde SPEC 12 los filtros están en el panel de progreso, plegado al montar: se despliega antes.
+  const progressFilterBtns = () => { const t = document.querySelector(".viewer__progress-toggle"); if (t && t.getAttribute("aria-expanded") === "false") t.click(); return [...document.querySelectorAll(".viewer__progress-filter-btn")]; };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const waitFor = async (fn, ms = 8000) => { const t = Date.now(); while (Date.now() - t < ms) { if (fn()) return true; await sleep(50); } return false; };
   const C = {};
@@ -357,8 +359,8 @@
 
   // ================= 15. encontrado con "Encontrados" apagado =================
   if ($(".viewer__toggle").getAttribute("aria-expanded") !== "true") await clickEl($(".viewer__toggle"), 400);
-  await waitFor(() => $$(".viewer__pin-filter-btn").every((x) => !x.disabled));
-  const foundFilter = $$(".viewer__pin-filter-btn")[1];
+  await waitFor(() => progressFilterBtns().every((x) => !x.disabled));
+  const foundFilter = progressFilterBtns()[1];
   await clickEl($(".viewer__toggle"), 400); // contraer: el panel no tapa el pin
   await openPinEdit("cyan"); await sleep(300);
   foundFilter.click(); await sleep(200); // "Encontrados" apagado mientras se edita

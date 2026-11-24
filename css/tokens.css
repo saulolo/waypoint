@@ -108,6 +108,10 @@
   --color-pin-outline-dark: #050508;
   --color-pin-outline-light: var(--color-text);
 
+  /* Panel de progreso (SPEC 12): bloques de la barra segmentada */
+  --color-progress-seg-off: rgba(0, 245, 255, 0.12);
+  --shadow-progress-seg-on: 0 0 6px rgba(0, 245, 255, 0.65);
+
   /* Glow (text-shadow / box-shadow) */
   --glow-cyan: 0 0 6px rgba(0, 245, 255, 0.65), 0 0 16px rgba(0, 245, 255, 0.45);
   --glow-magenta: 0 0 6px rgba(255, 0, 110, 0.65), 0 0 16px rgba(255, 0, 110, 0.45);
@@ -160,6 +164,10 @@
   --label-tooltip-width: 240px;
   --pin-found-opacity: 0.4;
   --label-placeholder-opacity: 0.5;
+  --progress-hud-width: 240px;
+  --progress-seg-height: 10px;
+  --progress-seg-height-thin: 5px;
+  --progress-empty-opacity: 0.55;
 
   /* Transiciones */
   --transition-fast: 120ms ease;

@@ -1,0 +1,257 @@
+/* ---------- Panel de progreso del visor (SPEC 12) ---------- */
+
+/*
+ * Arriba a la derecha, hermano de .viewer__stage como .viewer__panel: la rueda y el arrastre sobre
+ * él no llegan al mapa. Fondo, borde y esquinas cortadas como .dialog (SPEC 02).
+ */
+.viewer__progress {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: 1;
+  box-sizing: border-box;
+  width: min(var(--progress-hud-width), calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-3);
+  border: 1px solid var(--color-neon-cyan);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-dialog);
+  clip-path: polygon(
+    var(--clip-corner) 0,
+    100% 0,
+    100% calc(100% - var(--clip-corner)),
+    calc(100% - var(--clip-corner)) 100%,
+    0 100%,
+    0 var(--clip-corner)
+  );
+}
+
+/* Modos añadir/editar pin o texto (SPEC 08, 10, 11): se oculta como los controles de vista, para
+   no competir con el panel del editor. En pantalla completa (SPEC 06) sigue visible. */
+.viewer--adding-pin .viewer__progress,
+.viewer--adding-label .viewer__progress {
+  display: none;
+}
+
+/* Plegado: píldora con la cifra del mapa y el chevron. */
+.viewer__progress--collapsed {
+  width: auto;
+  padding: var(--space-2);
+}
+
+.viewer__progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.viewer__progress-title {
+  margin: 0;
+  color: var(--color-neon-cyan);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-sm);
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.08em;
+  line-height: 1.6;
+  text-transform: uppercase;
+  text-shadow: var(--glow-cyan);
+}
+
+.viewer__progress-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 28px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-neon-cyan);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-sm);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.viewer__progress-toggle:hover {
+  border-color: var(--color-neon-cyan);
+  box-shadow: var(--shadow-btn-cyan);
+}
+
+/* clip-path recorta el contorno exterior: va hacia dentro. */
+.viewer__progress-toggle:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: -3px;
+}
+
+.viewer__progress-chevron {
+  flex: none;
+}
+
+/* Plegado, el chevron apunta hacia abajo: desplegar. */
+.viewer__progress--collapsed .viewer__progress-chevron {
+  transform: rotate(180deg);
+}
+
+.viewer__progress-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+/* ---------- Línea de progreso (mapa / juego) ---------- */
+
+.viewer__progress-line {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.viewer__progress-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.viewer__progress-label {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
+
+.viewer__progress-count {
+  margin-left: auto;
+  color: var(--color-text);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.viewer__progress-pct {
+  min-width: 5ch;
+  color: var(--color-neon-cyan);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-pixel-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* 100 %: "COMPLETADO" en neón verde (.neon-green de effects.css), un poco más ancho que el porcentaje. */
+.viewer__progress-pct--complete {
+  letter-spacing: 0.04em;
+}
+
+/* Al llegar marcando: el .flicker de effects.css (5 s en bucle) se acorta a un solo parpadeo breve. */
+.viewer__progress-pct.flicker {
+  animation-duration: 1.2s;
+  animation-iteration-count: 1;
+}
+
+/* Mapa sin pines: "Sin pines" en lugar del porcentaje y la línea atenuada. */
+.viewer__progress-line--empty {
+  opacity: var(--progress-empty-opacity);
+}
+
+.viewer__progress-line--empty .viewer__progress-pct {
+  color: var(--color-text-muted);
+}
+
+/* Barra segmentada: 20 bloques fijos de 5 %. */
+.viewer__progress-bar {
+  display: grid;
+  grid-template-columns: repeat(20, 1fr);
+  gap: calc(var(--space-1) / 2);
+  height: var(--progress-seg-height);
+}
+
+.viewer__progress-seg {
+  background: var(--color-progress-seg-off);
+  transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.viewer__progress-seg.is-on {
+  background: var(--color-neon-cyan);
+  box-shadow: var(--shadow-progress-seg-on);
+}
+
+/* Línea del juego: barra más fina. */
+.viewer__progress-game .viewer__progress-bar {
+  height: var(--progress-seg-height-thin);
+}
+
+/* ---------- Filtros de pines (SPEC 09) ---------- */
+
+/* Aspecto de los filtros que tenía el panel lateral (SPEC 09). Uno debajo del otro, cada uno en
+   fila (icono, texto y cifra a la derecha): en dos columnas los textos no caben en el ancho del panel. */
+.viewer__progress-filter {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.viewer__progress-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.viewer__progress-filter-btn svg {
+  flex: none;
+}
+
+.viewer__progress-filter-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewer__progress-filter-count {
+  flex: none;
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.viewer__progress-filter-btn:hover {
+  border-color: var(--color-text-muted);
+  color: var(--color-text);
+}
+
+/* Se ven los pines de ese tipo: resaltado. Apagado (raya): atenuado. */
+.viewer__progress-filter-btn[aria-pressed="true"] {
+  border-color: var(--color-neon-cyan);
+  background: var(--color-surface-raised);
+  color: var(--color-neon-cyan);
+}
+
+/* clip-path del panel recorta el contorno exterior: va hacia dentro. */
+.viewer__progress-filter-btn:focus-visible {
+  outline: 2px solid var(--color-neon-cyan);
+  outline-offset: -3px;
+}
+
+.viewer__progress-filter-btn:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+/* La regla global de effects.css solo anula animation: la transición se anula aquí. */
+@media (prefers-reduced-motion: reduce) {
+  .viewer__progress-seg {
+    transition: none;
+  }
+}

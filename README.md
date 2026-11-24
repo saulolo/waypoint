@@ -3,7 +3,7 @@
 App web local para seguir tu progreso en videojuegos sobre sus mapas grandes.
 Creas una carpeta por juego (con su portada), cargas dentro las imágenes de sus mapas, se guardan en tu navegador y las abres con zoom y arrastre.
 
-> Estado: **SPEC 11** (juegos con portada, biblioteca de mapas en orden alfabético y visor con zoom fluido, panel lateral plegable con selector de mapas, controles de vista, pines sobre el mapa, pines encontrados con filtro, textos sobre el mapa y edición de pines y textos, con tema visual arcade retro).
+> Estado: **SPEC 12** (juegos con portada, biblioteca de mapas en orden alfabético y visor con zoom fluido, panel lateral plegable con selector de mapas, controles de vista, pines sobre el mapa, pines encontrados con filtro, textos sobre el mapa, edición de pines y textos y panel de progreso de pines, con tema visual arcade retro).
 >
 > **Aviso de la versión SPEC 03:** al actualizar desde la versión anterior, los mapas que ya tenías guardados se **borran** (ahora todo mapa pertenece a un juego). Si quieres conservar alguno, vuelve a cargarlo dentro de un juego.
 
@@ -52,8 +52,8 @@ Al abrir un juego ves su cabecera (**← Juegos**, portada, nombre y número de 
 
 - Clic en una tarjeta para abrir el mapa a pantalla completa, ajustado a la ventana.
 - **Panel lateral**: arriba a la izquierda, encima del mapa, con **← Mapas**, el nombre del juego y el nombre del mapa. Ocupa media ventana de alto y tapa esa parte del mapa.
-  - Al entrar en un mapa está **plegado**: solo se ve la pestaña **▶** en el borde izquierdo. Púlsala para abrirlo; **◀** lo vuelve a plegar. Plegarlo o abrirlo no mueve ni cambia el zoom del mapa.
-  - **Selector de mapas**: si el juego tiene 2 o más mapas, el nombre del mapa lleva un chevron y es un desplegable con los mapas del juego (miniatura y nombre, en orden alfabético). El mapa abierto aparece resaltado; elegir otro lo abre sin volver a la biblioteca (**Atrás** vuelve al anterior). Se cierra con otro clic en el nombre, **Esc**, clic fuera o al plegar el panel.
+  - Al entrar en un mapa está **plegado**: solo se ve la pestaña **▶** en el borde izquierdo. Púlsala para abrirlo; **◀** lo vuelve a plegar. Plegarlo o abrirlo no mueve ni cambia el zoom del mapa. Si cambias de mapa con el selector, sigue abierto.
+  - **Selector de mapas**: si el juego tiene 2 o más mapas, el nombre del mapa lleva un chevron y debajo la lista de mapas del juego (miniatura y nombre, en orden alfabético), **abierta por defecto**. El mapa abierto aparece resaltado; elegir otro lo abre sin volver a la biblioteca (**Atrás** vuelve al anterior). La lista solo se cierra a mano: otro clic en el nombre o **Esc**.
   - La rueda y el arrastre sobre el panel no mueven el mapa.
 - **Rueda del ratón**: zoom continuo hacia el punto bajo el cursor. Cada clic de rueda acerca o aleja un poco (hacen falta 3 clics para doblar el tamaño).
 - **Touchpad**: deslizar con dos dedos o pellizcar hace zoom del mapa (no de la página).
@@ -62,7 +62,7 @@ Al abrir un juego ves su cabecera (**← Juegos**, portada, nombre y número de 
 - **Botones de vista** (abajo a la derecha, encima de + / −, cada uno en su propia caja):
   - **T con +**: añade un texto (ver *Textos*).
   - **Pin con +**: añade un pin (ver *Pines*).
-  - **Pantalla completa**: la app ocupa todo el monitor, sin la interfaz del navegador. En ella solo se ven el mapa y los botones: el panel lateral se oculta y vuelve como estaba al salir. Se sale con el mismo botón o con **Esc**. Salir del mapa también sale de pantalla completa.
+  - **Pantalla completa**: la app ocupa todo el monitor, sin la interfaz del navegador. En ella solo se ven el mapa, los botones y el panel de progreso: el panel lateral se oculta y vuelve como estaba al salir. Se sale con el mismo botón o con **Esc**. Salir del mapa también sale de pantalla completa.
   - **1:1 / ajustar**: un solo botón. Muestra **1:1** y pone el mapa a tamaño real, manteniendo el punto que estaba en el centro. Con el mapa a tamaño real cambia a un recuadro, y al pulsarlo deja el mapa entero visible y centrado. Si haces zoom con la rueda, vuelve a mostrar **1:1**.
 - **Arrastrar**: mueve el mapa. Puede salir de la ventana por cualquier borde, pero siempre queda un trozo visible (100 px) para no perderlo.
 - Con **reducir movimiento** activado, la rueda, 1:1 y ajustar saltan a la vista final sin animar.
@@ -84,7 +84,12 @@ Marcas sobre el mapa con un icono, un color, un nombre y una nota. Se guardan en
 - **Mover**: mantén pulsado un pin y arrástralo; se guarda al soltar. También funciona con el panel *Añadir pin* abierto (ahí, un clic sin arrastrar sobre un pin lleva el borrador a ese punto).
 - **Borrar**: *Borrar* en su popup; pide confirmación y no se puede deshacer. Borrar un mapa o un juego borra también sus pines.
 - **Encontrados**: en el popup de un pin, el botón con un **ojo** (arriba a la derecha) lo marca como encontrado: el pin queda translúcido al momento y el ojo se muestra tachado. Púlsalo otra vez para volver a marcarlo como pendiente. Se guarda en el navegador.
-- **Filtro de pines**: en el panel lateral, bajo el nombre del juego, dos botones con icono: **Pendientes** y **Encontrados**. Cada uno muestra u oculta los pines de ese tipo (un icono tachado = ocultos); con los dos activos se ven todos, con solo **Encontrados** ves únicamente los ya hallados, y con los dos apagados no se ve ninguno. El filtro se guarda por mapa. Si marcas un pin con su filtro oculto, el pin desaparece al cerrar su popup.
+- **Progreso**: arriba a la derecha, un panel estilo HUD arcade, **plegado** al entrar: una píldora con los encontrados del mapa ("12/40"). Púlsala para desplegarlo (con el chevron se vuelve a plegar):
+  - **Mapa**: encontrados / total, porcentaje y una barra de 20 bloques (cada bloque, 5 %). Sin pines dice *Sin pines*; con todos encontrados, **COMPLETADO** en verde neón (parpadea una vez si lo consigues marcando el último).
+  - **Juego**: lo mismo sumando todos los mapas del juego (si no se puede leer, "—").
+  - Cuentan todos los pines, también los ocultos por el filtro; los textos no. Las cifras cambian al momento al marcar, crear o borrar pines.
+  - Se oculta mientras añades o editas un pin o un texto; en pantalla completa sigue visible.
+- **Filtro de pines**: en el panel de progreso, bajo las barras, dos botones con icono y su cifra: **Pendientes** y **Encontrados**. Cada uno muestra u oculta los pines de ese tipo (un icono tachado = ocultos); con los dos activos se ven todos, con solo **Encontrados** ves únicamente los ya hallados, y con los dos apagados no se ve ninguno. El filtro se guarda por mapa. Si marcas un pin con su filtro oculto, el pin desaparece al cerrar su popup.
 - **Editar**: *Editar* en su popup abre el panel *Editar pin* con nombre, nota, icono, color y tamaño del pin. El pin se convierte en el borrador, en su mismo sitio (no cae): cambia lo que quieras y muévelo arrastrándolo o con un clic en el mapa. **Guardar** aplica los cambios (con el nombre vacío se usa el del icono); **Cancelar** o **Esc** lo dejan como estaba. Editar no cambia *Último usado* ni si el pin está encontrado. Si el filtro oculta el pin, al guardar no se ve.
 
 ### Textos
