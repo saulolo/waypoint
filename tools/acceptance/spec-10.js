@@ -17,6 +17,8 @@
 //   32  grep de colores literales fuera de css/tokens.css (ver spec-02.js).
 //   33  spec-01.js a spec-09.js y este script pasan con un WP_PROFILE vacío.
 (async () => {
+  // Desde SPEC 12 los filtros están en el panel de progreso, plegado al montar: se despliega antes.
+  const progressFilterBtns = () => { const t = document.querySelector(".viewer__progress-toggle"); if (t && t.getAttribute("aria-expanded") === "false") t.click(); return [...document.querySelectorAll(".viewer__progress-filter-btn")]; };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const waitFor = async (fn, ms = 8000) => { const t = Date.now(); while (Date.now() - t < ms) { if (fn()) return true; await sleep(50); } return false; };
   const C = {};
@@ -293,11 +295,11 @@
   await mk.create(mapA.id, { x: 0.7, y: 0.7, name: "P", note: "", icon: "pointer", color: "gold", size: 32 });
   await openViewer(mapA.id);
   if ($(".viewer__toggle").getAttribute("aria-expanded") !== "true") await clickEl($(".viewer__toggle"), 400);
-  await waitFor(() => $$(".viewer__pin-filter-btn").every((x) => !x.disabled));
-  for (const fb of $$(".viewer__pin-filter-btn")) if (fb.getAttribute("aria-pressed") === "true") await clickEl(fb, 300);
-  const filtersOff = $$(".viewer__pin-filter-btn").every((x) => x.getAttribute("aria-pressed") === "false");
+  await waitFor(() => progressFilterBtns().every((x) => !x.disabled));
+  for (const fb of progressFilterBtns()) if (fb.getAttribute("aria-pressed") === "true") await clickEl(fb, 300);
+  const filtersOff = progressFilterBtns().every((x) => x.getAttribute("aria-pressed") === "false");
   ok("24_filtros_no_afectan", filtersOff && $$(".leaflet-marker-icon.pin").length === 0 && savedTexts().length === 1, { pins: $$(".leaflet-marker-icon.pin").length, texts: savedTexts().length });
-  for (const fb of $$(".viewer__pin-filter-btn")) await clickEl(fb, 300);
+  for (const fb of progressFilterBtns()) await clickEl(fb, 300);
   await clickEl($(".viewer__toggle"), 400);
 
   // 25. pantalla completa simulada

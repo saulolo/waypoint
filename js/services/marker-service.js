@@ -1,6 +1,7 @@
 /*
  * Servicio de marcadores (pines, SPEC 08): validar, crear, listar, mover, editar (SPEC 11),
- * marcar como encontrado (SPEC 09), borrar y deducir el estilo del último pin guardado en un juego.
+ * marcar como encontrado (SPEC 09), borrar, deducir el estilo del último pin guardado en un juego
+ * y contar el progreso de pines del juego (SPEC 12).
  * No conoce el catálogo de iconos (es presentación, vive en js/ui/pin-icons.js):
  * solo comprueba que `icon` sea un texto no vacío. El nombre por defecto lo pone la UI.
  * No toca el DOM de la UI.
@@ -183,20 +184,26 @@
   }
 
   /**
+   * @param {string} gameId
+   * @returns {Promise<object[]>} Pines de todos los mapas del juego, sin orden.
+   */
+  function markersOfGame(gameId) {
+    return mapsRepository.listByGame(gameId).then(function (maps) {
+      return repository.listByMaps(
+        maps.map(function (map) {
+          return map.id;
+        })
+      );
+    });
+  }
+
+  /**
    * Estilo del pin guardado más reciente (mayor createdAt) entre los mapas del juego.
    * @param {string} gameId
    * @returns {Promise<{icon, color, size}|null>} null si el juego no tiene pines.
    */
   function lastStyle(gameId) {
-    return mapsRepository
-      .listByGame(gameId)
-      .then(function (maps) {
-        return repository.listByMaps(
-          maps.map(function (map) {
-            return map.id;
-          })
-        );
-      })
+    return markersOfGame(gameId)
       .then(function (markers) {
         var latest = null;
         markers.forEach(function (marker) {
@@ -206,6 +213,24 @@
         });
         return latest ? { icon: latest.icon, color: latest.color, size: latest.size } : null;
       });
+  }
+
+  /**
+   * Progreso de pines del juego (SPEC 12): todos los pines de todos sus mapas,
+   * encontrados o no (found ausente = false).
+   * @param {string} gameId
+   * @returns {Promise<{total: number, found: number}>} { total: 0, found: 0 } si no tiene pines.
+   */
+  function progressByGame(gameId) {
+    return markersOfGame(gameId).then(function (markers) {
+      var found = 0;
+      markers.forEach(function (marker) {
+        if (marker.found === true) {
+          found += 1;
+        }
+      });
+      return { total: markers.length, found: found };
+    });
   }
 
   Waypoint.services.markerService = {
@@ -223,5 +248,6 @@
     setFound: setFound,
     remove: remove,
     lastStyle: lastStyle,
+    progressByGame: progressByGame,
   };
 })(window.Waypoint);

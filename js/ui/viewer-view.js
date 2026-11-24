@@ -3,9 +3,11 @@
  *
  * El mapa ocupa toda la ventana. Encima, a la izquierda, un panel lateral (.viewer__panel) con
  * "← Mapas", el nombre del juego (si se pudo leer) y el nombre del mapa; con 2 o más mapas en el
- * juego, el nombre del mapa es un desplegable (selector) con los mapas del juego, en orden alfabético. Es hermano
+ * juego, el nombre del mapa es un desplegable (selector) con los mapas del juego, en orden alfabético,
+ * abierto por defecto (SPEC 12, enmienda). Es hermano
  * del escenario, no hijo del contenedor de Leaflet: superponerlo no redimensiona el mapa.
- * La pestaña .viewer__toggle lo pliega y despliega (siempre empieza contraído; no se guarda).
+ * La pestaña .viewer__toggle lo pliega y despliega (empieza contraído y no se guarda; salvo al
+ * cambiar de mapa con el selector, que lo deja expandido: SPEC 12, enmienda).
  * Contraído, el panel sale por la izquierda y queda inert; la pestaña, fuera de él, queda en el borde.
  *
  * La imagen ocupa los bounds [[0, 0], [height, width]]: 1 unidad = 1 px de la imagen a zoom 0.
@@ -21,15 +23,18 @@
  *     mapa y los controles (.viewer--fullscreen oculta el panel y su pestaña).
  *   - Pines (SPEC 08): al crear el mapa, Waypoint.ui.pinLayer pinta los pines guardados. El botón
  *     "Añadir pin" abre Waypoint.ui.pinEditor (panel derecho y borrador; .viewer--adding-pin).
- *   - Filtro de pines (SPEC 09): dos botones en el panel, bajo el juego ("Pendientes" y "Encontrados"),
- *     independientes; se guardan por mapa (mapService.setHideFound / setHidePending) y se aplican con
- *     pins.setHideFound / setHidePending, también con el panel contraído.
+ *   - Filtro de pines (SPEC 09): "Pendientes" y "Encontrados", independientes; se guardan por mapa
+ *     (mapService.setHideFound / setHidePending) y se aplican con pins.setHideFound / setHidePending.
+ *     Desde SPEC 12 sus botones están en el panel de progreso, no en el panel lateral.
  *   - Textos (SPEC 10): Waypoint.ui.labelLayer pinta los textos guardados; los filtros de pines no
  *     les afectan. El botón "Añadir texto" abre Waypoint.ui.labelEditor (panel derecho y borrador;
  *     .viewer--adding-label). Solo un modo de añadir a la vez.
+ *   - Progreso (SPEC 12): Waypoint.ui.progressHud, arriba a la derecha y hermano del escenario,
+ *     con las cifras de pins.counts() que llegan por onCountsChange. La línea del juego es
+ *     otherMaps + mapa: otherMaps = progressByGame − pins.counts(), leído una vez al cargar los pines.
  * Al salir se quitan el handler de rueda y el de fullscreenchange, se sale de pantalla completa,
- * se cancelan los paneles de pin y de texto si están abiertos, se destruyen las capas de pines y de textos,
- * se quita el listener de pointerdown del selector, se destruye el mapa Leaflet y se revocan los
+ * se cancelan los paneles de pin y de texto si están abiertos, se destruyen las capas de pines y de textos
+ * y el panel de progreso, se destruye el mapa Leaflet y se revocan los
  * object URLs de la imagen y de las miniaturas del selector.
  *
  * Nunca accede a IndexedDB: todo pasa por Waypoint.services.mapService y gameService.
@@ -38,6 +43,7 @@
   "use strict";
 
   var mapService = Waypoint.services.mapService;
+  var markerService = Waypoint.services.markerService;
   var gameService = Waypoint.services.gameService;
   var notice = Waypoint.ui.notice;
   var router = Waypoint.core.router;
@@ -47,6 +53,7 @@
   var pinEditor = Waypoint.ui.pinEditor;
   var labelLayer = Waypoint.ui.labelLayer;
   var labelEditor = Waypoint.ui.labelEditor;
+  var progressHud = Waypoint.ui.progressHud;
 
   var MAX_ZOOM = 2; // 2^2 = 4× el tamaño real
   var MIN_ZOOM_BELOW_FIT = 2; // zoom mínimo = fitZoom − 2 → 1/4 del tamaño de ajuste
@@ -57,6 +64,10 @@
   var ACTUAL_SIZE_ZOOM = 0; // CRS.Simple con la imagen en [0,0]–[height,width]: zoom 0 = 1:1
   var ACTUAL_SIZE_EPSILON = 0.01; // tolerancia para dar por "tamaño real" un zoom casi 0
   var APP_TITLE = "Waypoint";
+
+  // Cambiar de mapa con el selector remonta el visor; este id hace que el visor nuevo (y solo ese
+  // mapa) empiece con el panel expandido, como estaba (SPEC 12, enmienda). Se consume al montar.
+  var keepPanelOpenFor = null;
 
   // Leaflet no mira prefers-reduced-motion: las animaciones propias del visor lo consultan aquí.
   function prefersReducedMotion() {
@@ -88,6 +99,52 @@
     var controls = null; // L.Control de vista (pantalla completa, ajustar, 1:1)
     var pins = null; // capa de pines guardados (pin-layer.js)
     var labels = null; // capa de textos guardados (label-layer.js)
+    var hud = null; // panel de progreso (progress-hud.js), desde que hay capa de pines
+    var progress = {
+      map: { total: 0, found: 0 }, // de pins.counts()
+      otherMaps: null, // { total, found } del resto de mapas del juego; null = no disponible
+      loaded: false, // pins.load() terminado: los cambios siguientes son en vivo
+    };
+
+    // Cifras del panel: mapa y juego (otherMaps + mapa, o "—" si no se pudo leer el juego).
+    function renderProgress(live) {
+      if (!hud) {
+        return;
+      }
+      hud.setMap(progress.map, { live: live === true });
+      hud.setGame(
+        progress.otherMaps
+          ? {
+              total: progress.otherMaps.total + progress.map.total,
+              found: progress.otherMaps.found + progress.map.found,
+            }
+          : null
+      );
+    }
+
+    // Una sola lectura del juego, tras cargar los pines; los cambios posteriores del mapa abierto se
+    // suman sobre otherMaps. Si falla: "—" y error en consola, sin aviso.
+    function loadGameProgress(gameId) {
+      markerService
+        .progressByGame(gameId)
+        .then(function (game) {
+          if (!alive || !pins) {
+            return;
+          }
+          var loaded = pins.counts();
+          progress.otherMaps = {
+            total: Math.max(0, game.total - loaded.total),
+            found: Math.max(0, game.found - loaded.found),
+          };
+          renderProgress();
+        })
+        .catch(function (error) {
+          if (!alive) {
+            return;
+          }
+          console.error("[viewer] No se pudo leer el progreso del juego:", error);
+        });
+    }
     var closeLabelEditor = null; // cierre del modo "añadir texto" mientras está abierto (label-editor.js)
     var closeEditor = null; // cierre del modo "añadir pin" mientras está abierto (pin-editor.js)
 
@@ -109,45 +166,24 @@
     var title = el("h1", "viewer__title", "Cargando…");
     panel.appendChild(back);
 
-    // "Ocultar encontrados" (SPEC 09): se guarda por mapa (maps.hideFound). Desactivado hasta que el
-    // mapa y la capa de pines estén listos; el valor inicial lo pone createLeafletMap.
-    // Dos botones independientes (SPEC 09): cada uno decide si se ven los pines pendientes / encontrados.
-    // Sin raya = se ven; con raya = ocultos. Con los dos tachados no queda ningún pin; solo el de
-    // "Encontrados" abierto = solo los encontrados. Se guardan por mapa (maps.hidePending / hideFound).
-    var SVG_ATTRS = 'viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
-    var SLASH = '<path class="viewer__pin-filter-slash" d="M3 3l18 18"/>'; // raya: ese tipo de pin está oculto
+    // Filtros de pines (SPEC 09): dos estados independientes, cada uno decide si se ven los pines
+    // pendientes / encontrados; se guardan por mapa (maps.hidePending / hideFound). Desde SPEC 12 sus
+    // botones están solo en el panel de progreso (progress-hud.js); aquí queda el estado.
+    // El valor inicial lo pone createLeafletMap.
     var FILTERS = [
-      // Pendientes: chincheta de mapa. Encontrados: círculo con check.
-      { key: "pending", label: "Pendientes", visible: true, icon: '<path d="M12 22s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>' },
-      { key: "found", label: "Encontrados", visible: true, icon: '<circle cx="12" cy="12" r="10"/><path d="M8 12.5l3 3 5-6"/>' },
+      { key: "pending", visible: true },
+      { key: "found", visible: true },
     ];
-    var filterGroup = el("div", "viewer__pin-filter");
-    filterGroup.setAttribute("role", "group");
-    filterGroup.setAttribute("aria-label", "Pines visibles");
-    var filterButtons = {};
-    FILTERS.forEach(function (item) {
-      var button = el("button", "viewer__pin-filter-btn");
-      button.type = "button";
-      button.disabled = true; // hasta que el mapa y la capa de pines estén listos
-      button.innerHTML = "<svg " + SVG_ATTRS + ">" + item.icon + SLASH + "</svg>";
-      button.appendChild(el("span", "viewer__pin-filter-text", item.label));
-      button.addEventListener("click", function () {
-        toggleFilter(item);
-      });
-      filterButtons[item.key] = button;
-      filterGroup.appendChild(button);
-    });
 
-    function renderFilter(item) {
-      var button = filterButtons[item.key];
-      button.setAttribute("aria-pressed", item.visible ? "true" : "false");
-      // toggleAttribute: los SVG no tienen la propiedad `hidden`; el CSS global [hidden] sí aplica.
-      button.querySelector(".viewer__pin-filter-slash").toggleAttribute("hidden", item.visible);
+    function renderFilters() {
+      if (hud) {
+        hud.setFilters({ pending: FILTERS[0].visible, found: FILTERS[1].visible });
+      }
     }
 
     function applyFilter(item, visible) {
       item.visible = visible;
-      renderFilter(item);
+      renderFilters();
       if (pins) {
         if (item.key === "found") {
           pins.setHideFound(!visible);
@@ -174,8 +210,6 @@
         applyFilter(item, previous);
       });
     }
-    FILTERS.forEach(renderFilter);
-    panel.appendChild(filterGroup);
     panel.appendChild(title);
 
     // Pestaña de plegado: fuera del panel, para que siga activa cuando el panel queda inert.
@@ -183,9 +217,11 @@
     toggle.type = "button";
     toggle.setAttribute("aria-controls", panel.id);
 
-    // Siempre contraído al montar (desde SPEC 08; antes expandido); el estado no se guarda.
+    // Contraído al montar (desde SPEC 08; antes expandido); el estado no se guarda. Excepción: si se
+    // llega desde el selector de mapas, expandido (SPEC 12, enmienda).
     // La clase se pone antes de insertar el panel: no hay transición al abrir.
-    var panelExpanded = false;
+    var panelExpanded = keepPanelOpenFor === params.id;
+    keepPanelOpenFor = null;
 
     function renderPanelState() {
       root.classList.toggle("viewer--panel-collapsed", !panelExpanded);
@@ -198,9 +234,6 @@
     toggle.addEventListener("click", function () {
       panelExpanded = !panelExpanded;
       renderPanelState();
-      if (!panelExpanded) {
-        closeMapList(); // el panel queda inert: la lista no puede quedarse abierta
-      }
     });
     renderPanelState();
 
@@ -354,19 +387,36 @@
         updateMaxBounds(bounds);
       });
 
+      // Panel de progreso (SPEC 12): hermano del escenario, como el panel lateral.
+      hud = progressHud.create({
+        onToggleFilter: function (key) {
+          toggleFilter(key === "found" ? FILTERS[1] : FILTERS[0]);
+        },
+      });
+      root.appendChild(hud.el);
+
       // Pines guardados del mapa: si la carga falla, avisa y el mapa sigue abierto.
       pins = pinLayer.create(leafletMap, map, {
         onEdit: function (marker) {
           openPinEditor(map, marker);
         },
+        onCountsChange: function (counts) {
+          if (alive) {
+            progress.map = counts;
+            renderProgress(progress.loaded);
+          }
+        },
       });
       // Antes de load(): los pines ocultos ni se pintan.
       applyFilter(FILTERS[0], map.hidePending !== true);
       applyFilter(FILTERS[1], map.hideFound !== true);
-      FILTERS.forEach(function (item) {
-        filterButtons[item.key].disabled = false;
+      hud.setFiltersEnabled(true);
+      pins.load().then(function () {
+        if (alive) {
+          progress.loaded = true;
+          loadGameProgress(map.gameId);
+        }
       });
-      pins.load();
 
       // Textos guardados (SPEC 10): si la carga falla, avisa y el mapa sigue abierto.
       labels = labelLayer.create(leafletMap, map, {
@@ -493,16 +543,18 @@
     function showGame(game) {
       var block = el("div", "viewer__game");
       block.appendChild(el("p", "viewer__game-name", game.name));
-      panel.insertBefore(block, filterGroup); // los filtros van debajo del juego
+      panel.insertBefore(block, title);
     }
 
     // Selector de mapas: con 2 o más mapas en el juego, el nombre pasa a ser un botón con chevron.
     // textContent de .viewer__title sigue siendo el nombre (el SVG no aporta texto).
     // Con 1 mapa, o mientras la lista no ha llegado o si falla, el título queda como texto.
-    var mapListOpen = false; // siempre false al montar
+    // Abierta al montar (SPEC 12, enmienda; antes cerrada). Solo se cierra a mano: el disparador o Esc.
+    // Contraer el panel no la cierra: al volver a expandirlo sigue como estaba.
+    var mapListOpen = true;
     var mapTrigger = null;
     var mapList = null; // <ul class="viewer__map-list">, bajo el nombre del mapa
-    var mapListBuilt = false; // las filas (y sus object URLs) se crean al abrir por primera vez
+    var mapListBuilt = false; // las filas (y sus object URLs) se crean al abrir por primera vez (al montar)
     var thumbUrls = []; // object URLs de las miniaturas, revocados al desmontar
     var listedMaps = [];
     var currentMapId = null;
@@ -526,16 +578,6 @@
       mapListOpen = false;
       renderMapList();
     }
-
-    // Clic (pointerdown) fuera de la lista y del disparador, también sobre el mapa: cierra sin
-    // cambiar de mapa. No se detiene el evento: el clic sigue llegando al mapa (arrastre normal).
-    function onDocumentPointerDown(event) {
-      if (!mapListOpen || mapList.contains(event.target) || mapTrigger.contains(event.target)) {
-        return;
-      }
-      closeMapList();
-    }
-    document.addEventListener("pointerdown", onDocumentPointerDown);
 
     // Esc con el foco en el panel: cierra la lista y devuelve el foco al disparador.
     panel.addEventListener("keydown", function (event) {
@@ -623,6 +665,7 @@
       mapList.addEventListener("click", function (event) {
         var row = event.target.closest("button.viewer__map-row");
         if (row && mapList.contains(row)) {
+          keepPanelOpenFor = row.dataset.mapId; // el visor nuevo abre con el panel expandido
           router.goToMap(row.dataset.mapId);
         }
       });
@@ -689,7 +732,6 @@
     return function unmount() {
       alive = false;
       document.removeEventListener("fullscreenchange", onFullscreenChange);
-      document.removeEventListener("pointerdown", onDocumentPointerDown);
       if (document.fullscreenElement) {
         document.exitFullscreen().catch(function () {});
       }
@@ -713,6 +755,10 @@
       if (labels) {
         labels.destroy();
         labels = null;
+      }
+      if (hud) {
+        hud.destroy();
+        hud = null;
       }
       if (leafletMap) {
         leafletMap.remove();

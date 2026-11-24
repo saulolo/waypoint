@@ -8,7 +8,8 @@
 // Notas:
 //   - "Recargar" (06, 15) se hace remontando el visor (pasar por "#/" y volver): el script no
 //     sobrevive a un F5, y el visor nuevo lee los datos de IndexedDB igual que tras recargar.
-//   - El filtro del panel son dos botones (Pendientes / Encontrados) con aria-pressed.
+//   - El filtro son dos botones (Pendientes / Encontrados) con aria-pressed; desde SPEC 12 están
+//     en el panel de progreso (.viewer__progress-filter-btn), no en el panel lateral.
 //   - Un clic "en el mapa" para cerrar un popup cae lejos del pin: el popup sale encima de él.
 //   - Enter sintético lleva text "\r"; si no, no activa el botón.
 // Fuera de este script:
@@ -58,7 +59,10 @@
   const glyphOp = (e) => getComputedStyle(e.querySelector(".pin-glyph")).opacity;
   const openPopup = async (m) => { const c = pinAt(m); await clickAt(c.x, c.y, 400); };
   const expandPanel = async () => { $(".viewer__toggle").click(); await sleep(400); };
-  const btns = () => $$(".viewer__pin-filter-btn");
+  // Desde SPEC 12 los filtros están en el panel de progreso (.viewer__progress-filter), no en el lateral.
+  // Desde SPEC 12 los filtros están en el panel de progreso, plegado al montar: se despliega antes.
+  const progressFilterBtns = () => { const t = document.querySelector(".viewer__progress-toggle"); if (t && t.getAttribute("aria-expanded") === "false") t.click(); return [...document.querySelectorAll(".viewer__progress-filter-btn")]; };
+  const btns = progressFilterBtns;
   const P = () => btns()[0], F = () => btns()[1];
   const stateStr = () => btns().map((b) => b.getAttribute("aria-pressed")).join(",");
 
@@ -126,8 +130,8 @@
   const pc = await mk.create(mA.id, { x: .75, y: .5, name: "pc", ...st });
   await go(mA.id); await expandPanel();
   // 13 filtro: panel
-  const group = $(".viewer__pin-filter"); const game = $(".viewer__game");
-  ok("13_panel_filtro", !!group && btns().length === 2 && stateStr() === "true,true" && !!game && (game.compareDocumentPosition(group) & 4) > 0 && btns().every((x) => !x.disabled), { labels: btns().map((x) => x.textContent), state: stateStr() });
+  const group = $(".viewer__progress-filter");
+  ok("13_panel_filtro", !!group && !!group.closest(".viewer__progress") && !$(".viewer__pin-filter") && btns().length === 2 && stateStr() === "true,true" && btns().every((x) => !x.disabled), { labels: btns().map((x) => x.textContent), state: stateStr() });
   // 14 activar/desactivar
   const upd0 = (await getRec("maps", mA.id)).updatedAt;
   await clickEl(F());

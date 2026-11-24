@@ -136,7 +136,8 @@
   // 10. Contraído, Tab no lleva a "← Mapas"
   document.activeElement.blur();
   const focused = [];
-  for (let i = 0; i < 10; i++) { await tab(); focused.push(document.activeElement); }
+  // 15: desde SPEC 12 el panel de progreso (plegar + 2 filtros) alarga la vuelta del foco.
+  for (let i = 0; i < 15; i++) { await tab(); focused.push(document.activeElement); }
   ok("10_collapsed_no_focus", !focused.some((e) => e.closest(".viewer__panel")) && focused.includes(toggle()),
     focused.map((e) => e.className || e.tagName));
 
@@ -167,7 +168,9 @@
   await openViewer(mapA); // se monta un visor nuevo: tiene que empezar contraído
   const freshCollapsed = toggle().getAttribute("aria-expanded") === "false" && pr().right <= 0;
   window.location.hash = "#/game/" + withCover.id; await sleep(500);
-  ok("17_reopen_collapsed_and_revoked", viewerUrls.length === 1 && leftAlive.length === 0 && freshCollapsed,
+  // Desde SPEC 12 (enmienda) la lista del selector abre al montar: además de la imagen, el visor crea
+  // las miniaturas de los mapas (≥ 1 URL). Lo que importa es que ninguna siga viva.
+  ok("17_reopen_collapsed_and_revoked", viewerUrls.length >= 1 && leftAlive.length === 0 && freshCollapsed,
     { viewerUrls: viewerUrls.length, leftAlive: leftAlive.length, freshCollapsed });
 
   // 06. Portada (mapa A) e inicial (mapa C, juego sin portada)

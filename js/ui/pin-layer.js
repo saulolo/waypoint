@@ -1,7 +1,7 @@
 /*
  * Capa de pines guardados del visor (SPEC 08).
  *
- *   var layer = Waypoint.ui.pinLayer.create(leafletMap, map, { onEdit });  // map: { id, width, height }
+ *   var layer = Waypoint.ui.pinLayer.create(leafletMap, map, { onEdit, onCountsChange });  // map: { id, width, height }
  *   layer.load();          // lee los pines del mapa y los pinta; aviso si falla
  *   layer.add(marker);     // pinta un pin recién guardado
  *   layer.setHidePending(b); // true: quita del mapa los pines pendientes (independiente de setHideFound)
@@ -10,6 +10,7 @@
  *   layer.startEditing(id);        // SPEC 11: quita el pin del mapa mientras se edita (sigue en memoria)
  *   layer.stopEditing(id, marker); // lo vuelve a pintar con los datos nuevos, o los originales con null
  *   layer.focus(id);       // foco en el pin; false si no está pintado
+ *   layer.counts();        // SPEC 12: { total, found } del mapa, también los ocultos y el que se edita
  *   layer.destroy();       // quita marcadores y listeners (antes de leafletMap.remove())
  *
  * Cada pin es un L.Marker con L.divIcon: el glifo de pinIcons a `size` px de pantalla (no cambia con
@@ -21,6 +22,9 @@
  * Clic sostenido y arrastre mueve el pin (dentro de la imagen) y guarda la posición al soltar.
  * En modo "añadir pin" (setPlacing) siguen moviéndose, pero sin popup ni tooltip: un clic sin
  * arrastre lleva el borrador a ese punto.
+ *
+ * onCountsChange(counts) (SPEC 12) se llama tras load, add, borrar un pin y cada cambio de found
+ * (también al revertirlo); nunca tras destroy. Editar y mover no cambian las cifras.
  *
  * Posición: el marcador guarda x/y relativos (0–1); lat = height·(1 − y), lng = width·x (SPEC 01).
  * Nunca accede a IndexedDB: todo pasa por Waypoint.services.markerService.
@@ -146,11 +150,31 @@
       }
     }
 
+    /** Cifras del mapa (SPEC 12): todos los marcadores en memoria, pintados o no. */
+    function counts() {
+      var total = 0;
+      var found = 0;
+      Object.keys(markers).forEach(function (id) {
+        total += 1;
+        if (markers[id].found === true) {
+          found += 1;
+        }
+      });
+      return { total: total, found: found };
+    }
+
+    function emitCounts() {
+      if (options.onCountsChange && !destroyed) {
+        options.onCountsChange(counts());
+      }
+    }
+
     // Alterna el estado al momento y lo guarda; si falla, vuelve al anterior con aviso.
     function toggleFound(marker) {
       var previous = marker.found === true;
       marker.found = !previous;
       paintFound(marker);
+      emitCounts();
       markerService.setFound(marker.id, marker.found).catch(function (error) {
         if (destroyed) {
           return;
@@ -159,6 +183,7 @@
         notice.show("No se pudo marcar el pin.", { type: "error" });
         marker.found = previous;
         paintFound(marker);
+        emitCounts();
       });
     }
 
@@ -233,6 +258,7 @@
               }
               delete markers[marker.id];
               delete hidden[marker.id];
+              emitCounts();
             },
             function (error) {
               console.error("[pin-layer] No se pudo borrar el pin:", error);
@@ -329,8 +355,15 @@
       pin.remove(); // cierra también su popup
     }
 
-    // Registra un pin y lo pinta salvo que el filtro lo oculte.
+    // Pin recién guardado: lo registra, lo pinta (salvo filtro) y avisa de las cifras nuevas.
     function add(marker) {
+      var pin = register(marker);
+      emitCounts();
+      return pin;
+    }
+
+    // Registra un pin y lo pinta salvo que el filtro lo oculte.
+    function register(marker) {
       markers[marker.id] = marker;
       if (isOut(marker)) {
         hidden[marker.id] = true;
@@ -397,7 +430,9 @@
           if (destroyed) {
             return;
           }
-          markers.forEach(add);
+          // Un solo aviso de cifras para toda la carga, no uno por pin.
+          markers.forEach(register);
+          emitCounts();
         })
         .catch(function (error) {
           if (destroyed) {
@@ -551,6 +586,7 @@
       startEditing: startEditing,
       stopEditing: stopEditing,
       focus: focus,
+      counts: counts,
       boxes: boxes,
       destroy: destroy,
     };

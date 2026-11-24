@@ -71,20 +71,21 @@
   const rows = () => $$(".viewer__map-row");
   const rowNames = () => $$(".viewer__map-row-name").map((n) => n.textContent);
   const ir = () => rect($(".leaflet-image-layer"));
+  // Desde SPEC 12 (enmienda) la lista empieza abierta: se abre solo si está cerrada.
+  const openList = async () => { if (trigger().getAttribute("aria-expanded") !== "true") await clickEl(trigger(), 300); };
 
   // 02. Con 3 mapas: disparador con svg
   await openViewer(id("Alfa"));
   await waitFor(() => !!trigger());
   const t = trigger();
-  ok("02_trigger", !!t && t.tagName === "BUTTON" && !!t.querySelector("svg") && t.getAttribute("aria-expanded") === "false" && t.getAttribute("aria-haspopup") === "true"
+  ok("02_trigger", !!t && t.tagName === "BUTTON" && !!t.querySelector("svg") && t.getAttribute("aria-expanded") === "true" && t.getAttribute("aria-haspopup") === "true"
     && t.getAttribute("aria-controls") === "viewer-map-list" && title().textContent === "Alfa",
     { expanded: t?.getAttribute("aria-expanded"), text: title().textContent });
 
-  // 04. Lista cerrada al abrir
-  ok("04_list_closed_on_open", !list() || !visible(list()), { exists: !!list() });
+  // 04. Lista abierta al abrir (SPEC 12, enmienda; antes cerrada)
+  ok("04_list_open_on_open", visible(list()), { exists: !!list() });
 
-  // 05. Clic en el disparador: lista visible bajo el título, dentro del panel
-  await clickEl(trigger(), 400);
+  // 05. Lista visible bajo el título, dentro del panel
   ok("05_open_list", trigger().getAttribute("aria-expanded") === "true" && visible(list()) && panel().contains(list()) && rect(list()).top >= rect(title()).bottom - 1,
     { expanded: trigger().getAttribute("aria-expanded"), listTop: rect(list())?.top, titleBottom: rect(title()).bottom });
 
@@ -108,28 +109,26 @@
   ok("11_second_click_closes", trigger().getAttribute("aria-expanded") === "false" && !visible(list()));
 
   // 12. Esc cierra y devuelve el foco al disparador
-  await clickEl(trigger(), 300);
+  await openList();
   const openedForEsc = visible(list());
   rows().find((r) => r.tagName === "BUTTON").focus();
   await window.cdpKey("Escape"); await sleep(300);
   ok("12_esc_closes_and_focuses", openedForEsc && !visible(list()) && trigger().getAttribute("aria-expanded") === "false" && document.activeElement === trigger(), { active: document.activeElement?.className });
 
-  // 13. Clic sobre el mapa cierra y no cambia de ruta
-  await clickEl(trigger(), 300);
+  // 13. Clic sobre el mapa no cierra la lista (SPEC 12, enmienda) ni cambia de ruta
+  await openList();
   const hashBefore = window.location.hash;
   await clickAt(window.innerWidth - 200, window.innerHeight - 100, 400);
-  ok("13_click_outside_closes", !visible(list()) && trigger().getAttribute("aria-expanded") === "false" && window.location.hash === hashBefore, { hash: window.location.hash });
+  ok("13_click_outside_keeps_open", visible(list()) && trigger().getAttribute("aria-expanded") === "true" && window.location.hash === hashBefore, { hash: window.location.hash });
 
-  // 14. Contraer el panel cierra la lista
-  await clickEl(trigger(), 300);
-  const openedForToggle = visible(list());
+  // 14. Contraer y expandir el panel deja la lista abierta (SPEC 12, enmienda)
+  await openList();
   await clickEl($(".viewer__toggle"), 500);
-  const closedByToggle = !visible(list()) && trigger().getAttribute("aria-expanded") === "false";
   await clickEl($(".viewer__toggle"), 500); // volver a expandir
-  ok("14_collapse_closes", openedForToggle && closedByToggle);
+  ok("14_collapse_keeps_open", visible(list()) && trigger().getAttribute("aria-expanded") === "true");
 
   // 17. Rueda sobre la lista no cambia el zoom
-  await clickEl(trigger(), 300);
+  await openList();
   const zoom0 = map.getZoom();
   const lr = rect(list());
   await input([M("mouseWheel", lr.left + lr.width / 2, lr.top + lr.height / 2, { deltaX: 0, deltaY: -300 })], 800);
@@ -149,10 +148,10 @@
   await waitFor(() => window.location.hash === "#/map/" + targetId); await waitFor(() => !!$(".leaflet-image-layer")?.complete); await sleep(600);
   ok("15_tab_and_enter", tabOk && window.location.hash === "#/map/" + targetId && title().textContent === targetName, { hash: window.location.hash, targetId, targetName, title: title().textContent, tabOk });
 
-  // 09. Saltar con clic: visor remontado con vista ajustada, panel contraído (SPEC 08) y lista cerrada
+  // 09. Saltar con clic: visor remontado con vista ajustada; panel y lista siguen abiertos (SPEC 12, enmienda)
   await waitFor(() => !!trigger());
   await expandPanel();
-  await clickEl(trigger(), 400);
+  await openList();
   const fromId = window.location.hash.replace("#/map/", "");
   const jumpRow = rows().find((r) => r.tagName === "BUTTON" && r.dataset.mapId !== fromId);
   const jumpName = jumpRow.querySelector(".viewer__map-row-name").textContent, jumpId = jumpRow.dataset.mapId;
@@ -160,8 +159,8 @@
   await waitFor(() => window.location.hash === "#/map/" + jumpId); await waitFor(() => !!$(".leaflet-image-layer")?.complete); await sleep(700);
   const fit = ir();
   const fitOk = (Math.abs(fit.width - window.innerWidth) <= 2 || Math.abs(fit.height - window.innerHeight) <= 2) && fit.width <= window.innerWidth + 2 && fit.height <= window.innerHeight + 2;
-  ok("09_jump_remounts", window.location.hash === "#/map/" + jumpId && title().textContent === jumpName && fitOk && $(".viewer").classList.contains("viewer--panel-collapsed")
-    && !visible(list()) && (!trigger() || trigger().getAttribute("aria-expanded") === "false"), { hash: window.location.hash, jumpId, jumpName, title: title().textContent, fit: [fit.width, fit.height], win: [window.innerWidth, window.innerHeight], collapsed: $(".viewer").classList.contains("viewer--panel-collapsed"), listVisible: visible(list()) });
+  ok("09_jump_remounts", window.location.hash === "#/map/" + jumpId && title().textContent === jumpName && fitOk && !$(".viewer").classList.contains("viewer--panel-collapsed") // SPEC 12 (enmienda): sigue expandido
+    && visible(list()) && trigger().getAttribute("aria-expanded") === "true", { hash: window.location.hash, jumpId, jumpName, title: title().textContent, fit: [fit.width, fit.height], win: [window.innerWidth, window.innerHeight], collapsed: $(".viewer").classList.contains("viewer--panel-collapsed"), listVisible: visible(list()) });
 
   // 10. Atrás vuelve al mapa anterior
   history.back();
@@ -185,7 +184,7 @@
   window.location.hash = "#/"; await sleep(500);
   await openViewer(manyId); await waitFor(() => !!trigger());
   const hBefore = rect(panel()).height;
-  await clickEl(trigger(), 400);
+  await openList();
   const hAfter = rect(panel()).height;
   ok("16_scroll_fixed_height", rows().length === 14 && panel().scrollHeight > panel().clientHeight + 1 && Math.abs(hAfter - hBefore) <= 1 && Math.abs(hAfter - window.innerHeight / 2) <= 1 && ["auto", "scroll"].includes(css(panel()).overflowY),
     { rows: rows().length, scrollH: panel().scrollHeight, clientH: panel().clientHeight, hBefore, hAfter });
@@ -195,7 +194,7 @@
   const urlsBase = liveUrls.size; // miniaturas de la biblioteca del juego
   for (const name of ["Alfa", "beta", "Ñu"]) {
     await openViewer(id(name)); await waitFor(() => !!trigger());
-    await clickEl(trigger(), 300);
+    await openList();
   }
   const duringUrls = liveUrls.size;
   window.location.hash = "#/game/" + game.id; await sleep(700);
@@ -205,7 +204,7 @@
 
   // 20b. Foco visible en disparador y filas (contorno hacia dentro)
   await openViewer(id("Alfa")); await waitFor(() => !!trigger());
-  await clickEl(trigger(), 300);
+  await openList();
   const focusInfo = [];
   document.activeElement?.blur();
   $(".viewer__back").focus();
