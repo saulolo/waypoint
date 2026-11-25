@@ -3,7 +3,7 @@
 App web local para seguir tu progreso en videojuegos sobre sus mapas grandes.
 Creas una carpeta por juego (con su portada), cargas dentro las imágenes de sus mapas, se guardan en tu navegador y las abres con zoom y arrastre.
 
-> Estado: **SPEC 12** (juegos con portada, biblioteca de mapas en orden alfabético y visor con zoom fluido, panel lateral plegable con selector de mapas, controles de vista, pines sobre el mapa, pines encontrados con filtro, textos sobre el mapa, edición de pines y textos y panel de progreso de pines, con tema visual arcade retro).
+> Estado: **SPEC 13** (juegos con portada, biblioteca de mapas en orden alfabético y visor con zoom fluido, panel lateral plegable con selector de mapas, controles de vista, pines sobre el mapa, pines encontrados con filtro, textos sobre el mapa, edición de pines y textos y panel de progreso de pines, con tema visual arcade retro y favicon pixel art).
 >
 > **Aviso de la versión SPEC 03:** al actualizar desde la versión anterior, los mapas que ya tenías guardados se **borran** (ahora todo mapa pertenece a un juego). Si quieres conservar alguno, vuelve a cargarlo dentro de un juego.
 
@@ -112,6 +112,7 @@ Rótulos sobre el mapa (el nombre de una ciudad, una región o un río), en letr
 - Cada tarjeta de juego y de mapa lleva un color de acento (cian, magenta, amarillo, verde, por turnos). Los nombres se ven en mayúsculas.
 - Los botones se distinguen por lo que hacen: confirmar (guardar, crear…) en cian, **cancelar** en violeta, **editar** en dorado, **borrar** en magenta y los de navegación en gris.
 - En el visor, la imagen del mapa se ve limpia, sin efectos encima.
+- **Icono**: la pestaña y la cabecera llevan el mismo dibujo pixel art, un pin magenta sobre un mapa plegado cian. Con un mapa abierto y todos sus pines encontrados (**COMPLETADO**), el pin de la pestaña se pone verde; al salir del mapa vuelve a magenta. El de la cabecera no cambia.
 - Si tienes activado **reducir movimiento** en Windows (*Configuración → Accesibilidad → Efectos visuales → Efectos de animación*, desactivado), la app no anima nada.
 - La letra pixel no dibuja bien algunas vocales acentuadas en mayúsculas (la "Í" sale como "ı"). El nombre guardado no cambia: solo es cómo se ve.
 
@@ -133,6 +134,7 @@ Ten en cuenta:
 index.html     punto de entrada
 css/           estilos (colores en css/tokens.css, efectos arcade en css/effects.css)
 js/            código de la app (core, data, services, ui)
+img/           favicon pixel art (normal y mapa completado)
 vendor/        Leaflet 1.9.4 y fuentes, copiados para funcionar sin internet
 specs/         especificaciones de cada fase
 ```
@@ -141,7 +143,7 @@ La documentación técnica está en [`CLAUDE.md`](CLAUDE.md) y las especificacio
 
 ## Próximamente
 
-- Filtros por categoría, ocultar textos y contador de encontrados.
+- Filtros por categoría y ocultar textos.
 - Ideas para después: categorías con color, rutas, exportar/importar copias de seguridad, tiles para imágenes gigantes.
 
 ## Créditos

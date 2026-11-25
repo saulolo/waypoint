@@ -7,6 +7,7 @@ Uso y limitaciones para el usuario: `README.md`. Qué se construye y por qué: `
 
 - Se abre con doble clic en `index.html` (`file://`): sin servidor, sin build, sin red.
 - **Scripts clásicos, no ES modules**: los módulos no cargan con `file://` (CORS). Cada archivo es una IIFE que registra su API en `window.Waypoint.{core,data,services,ui}`.
+- Recursos gráficos propios (favicons) en `img/`.
 - Dependencias externas solo copiadas en `vendor/` (Leaflet 1.9.4; fuentes Press Start 2P y JetBrains Mono en `vendor/fonts/` con su OFL). Nada de CDN.
 - Objetivo: Chrome/Edge (Chromium). Firefox no está soportado.
 
@@ -30,7 +31,7 @@ El modelo de datos (stores `maps`, `images`, `markers`), la conversión de coord
 ## Convenciones
 
 - UI, comentarios y mensajes en español; identificadores en inglés.
-- Colores, espacios y radios solo vía tokens de `css/tokens.css` (tema arcade, SPEC 02). Ningún hex ni `rgb()` fuera de ahí, salvo los `fill` de `js/ui/silhouettes.js` y el SVG del ruido de `css/effects.css`.
+- Colores, espacios y radios solo vía tokens de `css/tokens.css` (tema arcade, SPEC 02). Ningún hex ni `rgb()` fuera de ahí, salvo los `fill` de `js/ui/silhouettes.js`, el SVG del ruido de `css/effects.css` y los dos favicons `img/favicon.svg` / `img/favicon-complete.svg` (SPEC 13: un archivo suelto no lee los tokens; llevan los hex de la paleta).
 - `css/effects.css` guarda lo que no es un componente: capas de fondo (`.app-bg`, `.app-noise`), texto neón (`.neon-*`), `.flicker`, `.blink-cursor`, siluetas y keyframes. Las capas decorativas llevan `pointer-events: none`; el contenido va encima con `z-index: 2`.
 - Tipografía: `--font-pixel` (Press Start 2P) para títulos, botones y nombres de mapa, con sus tamaños `--font-size-pixel-*`; `--font-mono` para el resto. Lo que escribe el usuario (inputs) va siempre en mono.
 - Movimiento: `prefers-reduced-motion: reduce` anula todas las animaciones con una regla global en `css/effects.css`; los `transform` de hover se anulan aparte en el CSS del componente.
@@ -86,13 +87,14 @@ El modelo de datos (stores `maps`, `images`, `markers`), la conversión de coord
   - Los filtros Pendientes/Encontrados de SPEC 09 están **solo** aquí (`.viewer__progress-filter-btn`, `data-filter`); el panel lateral ya no los tiene. El estado sigue en `FILTERS` de `viewer-view.js` y `renderFilters()` lo pinta. Plegado, los filtros no se ven: las pruebas despliegan el panel antes (`progressFilterBtns()` en `spec-09/10/11.js`).
   - Oculto con `.viewer--adding-pin` / `.viewer--adding-label`; visible en pantalla completa.
 - **Selector y panel lateral** (enmiendas de SPEC 12): la lista del selector está **abierta al montar** y solo se cierra con el disparador o Esc (no hay listener de `pointerdown`; contraer el panel no la cierra). Elegir un mapa en ella deja el panel lateral expandido en el visor nuevo: `keepPanelOpenFor` (variable del módulo `viewer-view.js`) guarda el id destino y se consume al montar; cualquier otra entrada empieza contraída.
+- **Favicon** (SPEC 13): `img/favicon.svg` (pin magenta) e `img/favicon-complete.svg` (pin verde), pixel art 16×16 con `crispEdges`; se enlazan en `<link id="app-favicon">`. La marca de la cabecera (`img.app-header__mark`, `--header-mark-size`) usa siempre el normal. `js/ui/favicon.js` (`setComplete(b)`, `isComplete()`) cambia el `href` del `<link>` y no toca el DOM si el valor no cambia. Solo lo usa el visor: en `onCountsChange`, `setComplete(total > 0 && found === total)` (misma regla que "COMPLETADO"), y `setComplete(false)` al desmontar. Con `file://` la página no lee el texto de los SVG: `spec-13.js` comprueba que cargan como imagen y deja `viewBox`/colores a un grep.
 - Press Start 2P no dibuja bien vocales acentuadas en mayúsculas ("VACÍA" → "VACıA"). Aceptado en SPEC 02.
 
 ## Verificar cambios
 
 Verifica en el navegador con `tools/cdp-eval.mjs` (Chrome headless vía CDP; su cabecera documenta argumentos, variables y la entrada real de ratón/teclado). Playwright MCP bloquea `file://` y `chrome --dump-dom` congela IndexedDB, así que no sirven aquí.
 
-- Regresión: `tools/acceptance/spec-01.js`, `spec-02.js`, `spec-03.js`, `spec-04.js`, `spec-05.js`, `spec-06.js`, `spec-07.js`, `spec-08.js`, `spec-09.js`, `spec-10.js`, `spec-11.js` y `spec-12.js`, cada uno con un `WP_PROFILE` vacío. Crean un juego por servicio y trabajan dentro de `#/game/<id>`. Cada spec nueva añade su `tools/acceptance/spec-NN.js`.
+- Regresión: `tools/acceptance/spec-01.js`, `spec-02.js`, `spec-03.js`, `spec-04.js`, `spec-05.js`, `spec-06.js`, `spec-07.js`, `spec-08.js`, `spec-09.js`, `spec-10.js`, `spec-11.js`, `spec-12.js` y `spec-13.js`, cada uno con un `WP_PROFILE` vacío. Crean un juego por servicio y trabajan dentro de `#/game/<id>`. Cada spec nueva añade su `tools/acceptance/spec-NN.js`.
 - La entrada sintética (`new KeyboardEvent`) no cierra un `<dialog>` con Esc: usa `window.cdpKey("Escape")`.
 - Arrastrar un `L.Marker` con `Input.dispatchMouseEvent`: manda un último `mouseMoved` en el punto final y espera ~100 ms antes de soltar; si no, headless puede perder el último movimiento y el pin se queda corto (ver `drag` en `spec-08.js`).
 - El botón de pin abre el panel de pin, que oculta los controles de vista: `spec-06.js` anula `Waypoint.ui.pinEditor.open` mientras comprueba que los clics en ese botón no llegan al mapa.

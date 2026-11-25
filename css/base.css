@@ -73,17 +73,13 @@ p {
   text-decoration: none;
 }
 
-/* Marca: diamante magenta/cian */
+/* Marca: el favicon pixel art (SPEC 13), estático y sin suavizado */
 .app-header__mark {
+  display: block;
   flex: none;
-  width: 28px;
-  height: 28px;
-  background:
-    linear-gradient(45deg, var(--color-neon-magenta) 0 50%, transparent 50%),
-    linear-gradient(-45deg, var(--color-neon-cyan) 0 50%, transparent 50%);
-  background-blend-mode: screen;
-  border: 1px solid var(--color-mark-border);
-  box-shadow: var(--shadow-mark);
+  width: var(--header-mark-size);
+  height: var(--header-mark-size);
+  image-rendering: pixelated;
 }
 
 .app-header__name {

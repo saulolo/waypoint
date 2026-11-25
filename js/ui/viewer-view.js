@@ -54,6 +54,7 @@
   var labelLayer = Waypoint.ui.labelLayer;
   var labelEditor = Waypoint.ui.labelEditor;
   var progressHud = Waypoint.ui.progressHud;
+  var favicon = Waypoint.ui.favicon;
 
   var MAX_ZOOM = 2; // 2^2 = 4× el tamaño real
   var MIN_ZOOM_BELOW_FIT = 2; // zoom mínimo = fitZoom − 2 → 1/4 del tamaño de ajuste
@@ -404,6 +405,8 @@
           if (alive) {
             progress.map = counts;
             renderProgress(progress.loaded);
+            // Favicon verde con el mapa completado (SPEC 13), misma regla que "COMPLETADO".
+            favicon.setComplete(counts.total > 0 && counts.found === counts.total);
           }
         },
       });
@@ -774,6 +777,8 @@
       thumbUrls = [];
       document.body.classList.remove("is-viewer");
       document.title = APP_TITLE;
+      // Fuera del visor el favicon siempre es el normal (SPEC 13).
+      favicon.setComplete(false);
       container.innerHTML = "";
     };
   }
