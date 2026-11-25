@@ -57,8 +57,6 @@
   /* Cabecera */
   --color-header-bg-top: rgba(10, 10, 15, 0.92);
   --color-header-bg-bottom: rgba(10, 10, 15, 0.78);
-  --color-mark-border: rgba(255, 255, 255, 0.18);
-  --shadow-mark: 0 0 12px rgba(0, 245, 255, 0.55), inset 0 0 6px rgba(255, 0, 110, 0.5);
 
   /* Botones y campos */
   --color-btn-inner-cyan: rgba(0, 245, 255, 0.25);
@@ -158,6 +156,7 @@
 
   /* Layout */
   --header-height: 56px;
+  --header-mark-size: 24px;
   --viewer-panel-width: 260px;
   --pin-editor-width: 280px;
   --pin-picker-width: 320px;
